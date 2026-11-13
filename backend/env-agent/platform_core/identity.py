@@ -1,6 +1,7 @@
 """Local-first account identity with hashed, expiring sessions."""
 import hashlib,hmac,secrets,uuid
 from datetime import datetime,timedelta,timezone
+import os
 from fastapi import APIRouter,Depends,Header,HTTPException
 from pydantic import BaseModel,Field
 from .database import db
@@ -15,6 +16,8 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
  email:str=Field(min_length=5,max_length=254)
  password:str=Field(min_length=1,max_length=256)
+class RoleUpdate(BaseModel):
+ role:str=Field(pattern=r"^(chairman|administrator|operator|worker|member)$")
 def _hash_password(password,salt=None):
  salt=salt or secrets.token_bytes(16)
  digest=hashlib.pbkdf2_hmac("sha256",password.encode(),salt,310000)
@@ -71,3 +74,13 @@ def logout(user:dict=Depends(require_user)):
 @admin_router.get("/users")
 def list_users(limit:int=100):
  return db.many("SELECT user_id,email,display_name,role,state,created_at,updated_at FROM platform_users ORDER BY created_at DESC LIMIT ?",(max(1,min(limit,200)),))
+
+@admin_router.patch("/users/{user_id}/role")
+def update_user_role(user_id:str,payload:RoleUpdate):
+ if not db.one("SELECT user_id FROM platform_users WHERE user_id=?",(user_id,)):
+  raise HTTPException(404,"User not found.")
+ if payload.role=="chairman" and os.getenv("JROCAI_ALLOW_CHAIRMAN_ROLE_ASSIGNMENT","false").lower()!="true":
+  raise HTTPException(403,"Chairman role assignment is disabled in the Environment Agent.")
+ db.execute("UPDATE platform_users SET role=?,updated_at=? WHERE user_id=?",(payload.role,utc_now(),user_id))
+ audit("identity.role.change","user",user_id,payload.role)
+ return db.one("SELECT user_id,email,display_name,role,state,created_at,updated_at FROM platform_users WHERE user_id=?",(user_id,))
