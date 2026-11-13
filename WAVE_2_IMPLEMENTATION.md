@@ -57,3 +57,21 @@ Per the project instruction, comprehensive tests and Android builds are deferred
 - Add integration approval workflows and provider-specific adapters.
 - Add Android device discovery and operating-system permission flows.
 - Add release installation and update adapters with explicit user approval.
+
+
+## Delivery checklist snapshot (source inspection only)
+
+| Requirement | Status | Evidence or remaining work |
+|---|---|---|
+| Implementation files exist for all ten batches | Complete for initial foundations | Batch-specific service modules and the Android Wave Two hub are present; full feature scope remains in progress. |
+| Services are registered with the platform | Complete for the ten Wave Two service foundations | Environment Agent startup registers the ten service identifiers in the persistent service registry. |
+| Android screen and navigation are integrated | Complete for the Wave Two hub entry point | Main application navigation opens the Wave Two hub; individual operational screens and live data binding remain outstanding. |
+| Backend services and database migrations are connected | Incomplete | FastAPI routes and SQLite schema initialization are connected; a versioned migration runner and migration history are still required. |
+| Agent and worker permissions are enforced | Incomplete | Gateway authentication and capability-aware job selection exist; worker-specific identity, role-based authorization, leases and execution sandboxing remain required. |
+| Environment Agent manages provider and integration secrets | Complete for current provider boundary | Provider key remains server-side; integrations store Environment Agent references only. Android gateway access remains protected by Android Keystore. |
+| Zero-dollar spending restrictions are enforced | Complete at provider gateway | Paid provider calls require an explicit enable flag and a positive monthly limit; defaults are disabled and zero dollars. |
+| Reusable components are documented | Complete for initial contracts | Reusable component library and worker/integration contracts are present. |
+| Dependencies and configuration are recorded | Complete for current foundation | Existing dependency set, environment variables, storage locations and deferred work are documented. |
+| Final comprehensive test plan is prepared | Complete as a plan only | Test scope is documented; no tests or builds have been run in this development wave. |
+
+**Source-inspection checklist result: 8/10.** This is not a test pass or a production-readiness claim. The two incomplete requirements are database migrations and full agent/worker authorization. The Wave Two feature set itself remains under development.
