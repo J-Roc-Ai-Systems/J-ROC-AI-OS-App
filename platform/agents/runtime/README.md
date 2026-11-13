@@ -3,18 +3,23 @@
 **Service identifier:** `jrocai.platform.agent-runtime`  
 **Version:** `1.0.0`  
 **Host:** Node.js 20 or newer  
-**Dependencies:** Node.js built-ins only
+**Runtime dependencies:** Node.js built-ins only
 
-## Implemented runtime components
+## Runtime components
 
 - `agent-registry.mjs`: loads the canonical catalog, validates manifests, and exposes capability and host discovery.
 - `policy-engine.mjs`: deny-by-default identity, tenant, host, capability, and single-use approval checks.
-- `agent-runtime.mjs`: version-checked dispatch, dependency health checks, idempotency, execution timeout, and audited outcomes.
-- `http-gateway.mjs`: authenticated agent discovery and execution endpoints for Android, Windows, Linux, web, and cloud host adapters.
-- `file-audit-store.mjs`: redacted append-only JSON Lines adapter for local development only.
-- `source-agent.mjs`: reusable host-neutral Source Agent orchestration with catalog and inspector ports.
+- `agent-runtime.mjs`: version-checked dispatch, dependency health checks, execution deadlines, atomic idempotency, safe output redaction, and audit-required fail-closed behavior.
+- `http-gateway.mjs`: authenticated discovery and execution endpoints for platform clients.
+- `platform-service.mjs`: composes PostgreSQL stores, registry, runtime, HTTP gateway, and durable worker.
+- `task-worker.mjs`: claim, execute, complete, requeue, and recover durable tasks with worker leases.
+- `environment-agent.mjs`: scoped runtime credential broker. Secret values are exposed only inside an injected adapter callback; raw credentials in adapter results are blocked.
+- `source-agent.mjs`: reusable Source Agent orchestration with catalog and inspector adapters.
+- `postgres-adapters.mjs`: persistent agent definitions, append-only audit, request-bound approvals, atomic idempotency, and task queue adapters.
+- `file-audit-store.mjs`: redacted JSON Lines adapter for local development only.
+- `memory-idempotency-store.mjs`: process-local adapter for isolated tests only.
 
-## Run checks
+## Run verification
 
 From this directory:
 
@@ -25,40 +30,53 @@ npm run check
 
 No third-party package installation is required.
 
-## Integration contract
+## Compose the platform service
 
-Create the registry with the canonical catalog and validated platform manifests. Supply handlers by the key `<agentId>:<capability>`. Inject an authenticated principal with `authenticated`, `principalId`, `tenantId`, and explicit `grantedCapabilities`. The requesting host is resolved by trusted host integration, never accepted from an untrusted request body.
+The host service supplies:
+- A PostgreSQL-compatible database connection pool.
+- The canonical catalog file path and platform manifest paths.
+- Capability handlers only for agents actually implemented.
+- Trusted authentication and host-resolution functions.
+- A dependency-health adapter.
+- A trusted task-context resolver for background jobs.
+- Source catalog and inspection adapters before enabling the Source Agent.
 
-The runtime requires adapters for:
-- persistent idempotency records;
-- single-use, request-bound human approvals;
-- append-only, tenant-aware audit storage;
-- dependency health;
-- host authentication and host identity;
-- each enabled agent's capability handler.
+The service returns the shared registry, runtime, HTTP server, worker, and storage adapters. The caller owns process lifecycle and must close its database pool during shutdown. External exposure requires trusted TLS termination, rate limiting, request tracing, and server-side identity.
 
-The runtime deliberately does not ship permissive memory or static-token production defaults. Test fakes belong only in test code.
-
-## HTTP endpoints
+## HTTP gateway
 
 - `GET /health`: process liveness only.
-- `GET /v1/agents`: returns agents in the `available` state for the authenticated host.
-- `POST /v1/execute`: validates identity and policy, then dispatches one capability.
+- `GET /v1/agents`: only agents in the `available` state for the authenticated host.
+- `POST /v1/execute`: capability dispatch after identity, tenant, host, permission, approval, dependency, version, and audit checks.
 
-The gateway factory requires injected `authenticate` and `resolveHost` functions. Bind to `127.0.0.1` by default. External deployment must use trusted TLS termination, rate limiting, request tracing, host authentication, and a server-side identity provider. Never trust client-supplied principal or host headers.
+The gateway factory requires injected `authenticate` and `resolveHost` functions. Caller-supplied identity or host headers are not trusted.
 
-## Agent activation gate
+## Durable worker
 
-An entry in the 41-role catalog is a specification, not a running agent. A manifest can be registered, but dispatch occurs only when its lifecycle state is `available`, its exact version is loaded, its capability is explicitly granted to both the agent and caller, its host is supported, all dependencies are healthy, an execution handler exists, and audit storage is writable.
+`AgentTaskWorker.processOne()` claims and executes one job. `AgentTaskWorker.run({ signal })` operates a polling loop and exits on shutdown cancellation. The worker must rehydrate and verify the original principal through `resolveExecutionContext`; stored job payloads cannot establish their own authority.
 
-The Source Agent manifest is registered but intentionally not marked available. It becomes available only after the real source catalog, inspector, persistent audit and idempotency adapters, platform handler registration, and tests are connected.
+The database uses leases and row-level locking so multiple workers can claim separate jobs. Expired final-attempt jobs are marked failed rather than remaining stuck forever.
 
-## Production storage requirements
+## Environment Agent
 
-`JsonLinesAuditStore` is for local development and single-process diagnostics. It is not a multi-instance production audit database and does not make filesystem records tamper-proof. Production must inject a transactional tenant-aware database adapter with restricted append-only permissions, retention controls, backup, and monitoring. The same production requirement applies to approvals and idempotency. Do not silently fall back to memory or local files in production.
+Agents request secret references, never raw credential values in manifests or prompts. The Environment Agent checks tenant identity and the caller's allowed references, then invokes a trusted adapter callback using short-lived credentials from an injected provider. It audits only reference identifiers and scope metadata, blocks raw credential material in adapter results, and does not return the secret map to the caller.
 
-## Secrets and cost controls
+The real credential provider must be connected to the approved secret manager through the Environment Agent. No credential store, cloud account, provider key, or signing key is bundled in this source.
 
-Agents never store provider credentials. Secret references are resolved through the Environment Agent and short-lived scoped credentials are passed only to the specific adapter that needs them. Secret material must never enter agent inputs, outputs, audit records, mobile packages, or repository files.
+## Agent lifecycle gate
 
-The runtime itself has no paid service dependency and does not provision cloud resources. The platform zero-dollar spending gate remains in force.
+An entry in the 41-role catalog is a specification, not a running agent. A registered agent is dispatched only when its exact manifest version is loaded and marked `available`, readiness and test states are `passed`, its capability is explicitly declared, the authenticated caller has that capability, the host is supported, dependencies are healthy, a handler is installed, and audit storage is writable.
+
+The Source Agent manifest is registered but is not marked available. It still needs the live source catalog, inspector, persistent stores, and verified deployment wiring.
+
+## Production storage
+
+Apply `../storage/postgres/001_platform_agent_runtime.sql` using the trusted migration role. The migration creates platform definitions, append-only audit events, human approvals, atomic idempotency reservations, and leased task jobs. It enables row-level security, revokes client-role access, and grants backend-only access.
+
+The PostgreSQL adapters expect a connection exposing `query(sql, parameters)` and must be created with a server-side database credential supplied through the Environment Agent. Do not place privileged database credentials in Android, browser code, manifests, workflow files, or source control.
+
+The JSON Lines audit store and in-memory idempotency store are local/test adapters, not production multi-instance persistence. Production must use tenant-aware transactional database adapters, restricted service access, backups, retention controls, and monitoring.
+
+## Cost and security boundaries
+
+The runtime package has no paid service dependency and does not provision cloud resources. Keep the zero-dollar spending gate in force. Agents never store provider credentials, never execute untrusted code during source discovery, and must fail closed when identity, policy, approval, dependency health, or audit storage cannot be verified.
