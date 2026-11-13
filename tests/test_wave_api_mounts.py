@@ -16,5 +16,8 @@ class WaveApiMountTests(unittest.TestCase):
         self.assertIn("/platform/v1/wave-resources/catalog",paths)
         self.assertIn("/platform/v1/agent-jobs/{job_id}/dispatch",paths)
         self.assertIn("/platform/v1/agent-jobs/{job_id}",paths)
+        self.assertIn("/platform/v1/source-agent/status",paths)
+        self.assertIn("/platform/v1/source-agent/repositories/{owner}/{repo}/tree",paths)
+        self.assertIn("/platform/v1/source-agent/repositories/{owner}/{repo}/files",paths)
 
 if __name__=="__main__": unittest.main()
