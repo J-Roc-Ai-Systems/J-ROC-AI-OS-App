@@ -21,15 +21,14 @@ function redact(value) {
 export class PostgresAgentDefinitionStore {
   constructor(database) { this.database = requireDatabase(database); }
 
-  async listRegistered() {
+  async listLatest() {
     const result = await this.database.query(
       `select manifest
          from (
-           select distinct on (agent_id) manifest, lifecycle_state
+           select distinct on (agent_id) manifest
              from public.platform_agent_definitions
             order by agent_id, updated_at desc
-         ) latest
-        where lifecycle_state in ('registered','available','degraded','disabled')`
+         ) latest`
     );
     return (result.rows ?? []).map((row) => row.manifest);
   }
