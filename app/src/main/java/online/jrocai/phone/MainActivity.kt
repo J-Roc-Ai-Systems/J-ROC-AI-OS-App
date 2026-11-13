@@ -54,6 +54,7 @@ import online.jrocai.phone.data.RepairClient
 import online.jrocai.phone.data.AgentFactoryClient
 import online.jrocai.phone.data.FactoryClient
 import online.jrocai.phone.data.EnterpriseClient
+import online.jrocai.phone.data.ReleaseClient
 import java.text.DateFormat
 import java.util.Date
 
@@ -64,7 +65,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Repair", "Model Center",
-    "Conversations", "Device Tools", "Account", "Memory", "Agent Factory", "Application Factory", "Enterprise", "Settings", "Platform Hub"
+    "Conversations", "Device Tools", "Account", "Memory", "Agent Factory", "Application Factory", "Enterprise", "Releases", "Settings", "Platform Hub"
 )
 
 class MainActivity : ComponentActivity() {
@@ -152,6 +153,7 @@ private fun JrocPhoneApp(
                 "Agent Factory" -> AgentFactoryScreen(settings = secureSettings, client = AgentFactoryClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Application Factory" -> FactoryScreen(settings = secureSettings, client = FactoryClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Enterprise" -> EnterpriseScreen(settings = secureSettings, client = EnterpriseClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
+                "Releases" -> ReleaseScreen(settings = secureSettings, client = ReleaseClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Platform Hub" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
                 "Account" -> AccountScreen(settings = secureSettings, client = IdentityClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Memory" -> MemoryScreen(settings = secureSettings, client = MemoryClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
@@ -193,6 +195,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Agent Factory", "Create, version, publish and disable permission-bounded agents.", "Open Agent Factory") { onOpen("Agent Factory") }
         ModuleCard("Application Factory", "Register projects, define build recipes and approve worker build jobs.", "Open Application Factory") { onOpen("Application Factory") }
         ModuleCard("Enterprise Operations", "Manage organizations and submit device fleet enrollment requests.", "Open Enterprise") { onOpen("Enterprise") }
+        ModuleCard("Release Management", "Register releases, approve distribution and track release readiness.", "Open Releases") { onOpen("Releases") }
         ModuleCard("J-ROC AI Settings", "Manage privacy, local credentials and preferences.", "Open Settings") { onOpen("Settings") }
         ModuleCard("Ten-Wave Platform Hub", "Open the complete ten-wave, 100-batch development workspace.", "Open Platform Hub") { onOpen("Platform Hub") }
         Text("J-ROC AI • Local-first phone workspace", color = Muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
