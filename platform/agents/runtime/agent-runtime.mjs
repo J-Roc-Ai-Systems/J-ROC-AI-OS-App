@@ -71,6 +71,14 @@ export class AgentRuntime {
     }
     if (request.tenantId !== principal.tenantId ||
         request.requestedBy?.principalId !== principal.principalId) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: request.agentId,
+        tenantId: request.tenantId,
+        principalId: principal.principalId,
+        reason: "TENANT_BOUNDARY_DENIED"
+      });
       throw new AgentRuntimeError("TENANT_BOUNDARY_DENIED", "The request identity or tenant does not match the authenticated caller.", 403);
     }
 
@@ -93,16 +101,42 @@ export class AgentRuntime {
       throw new AgentRuntimeError("AGENT_VERSION_MISMATCH", "The requested agent version does not match the registered version.", 409);
     }
     if (!manifest.supportedHosts.includes(host)) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: manifest.agentId,
+        tenantId: request.tenantId,
+        principalId: principal.principalId,
+        reason: "HOST_NOT_SUPPORTED"
+      });
       throw new AgentRuntimeError("HOST_NOT_SUPPORTED", "This agent is not registered for the requesting host.", 403);
     }
     const declaredCapability = manifest.capabilities.find((item) =>
       (typeof item === "string" ? item : item?.id) === request.capability
     );
     if (!declaredCapability || !manifest.permissions.capabilities.includes(request.capability)) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: manifest.agentId,
+        tenantId: request.tenantId,
+        principalId: principal.principalId,
+        capability: request.capability,
+        reason: "CAPABILITY_NOT_DECLARED"
+      });
       throw new AgentRuntimeError("CAPABILITY_NOT_DECLARED", "The requested capability is not explicitly declared and permitted.", 403);
     }
     if (!Array.isArray(principal.grantedCapabilities) ||
         !principal.grantedCapabilities.includes(request.capability)) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: manifest.agentId,
+        tenantId: request.tenantId,
+        principalId: principal.principalId,
+        capability: request.capability,
+        reason: "PERMISSION_DENIED"
+      });
       throw new AgentRuntimeError("PERMISSION_DENIED", "The caller has not been granted this capability.", 403);
     }
 
