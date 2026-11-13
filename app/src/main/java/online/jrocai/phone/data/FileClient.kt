@@ -15,6 +15,7 @@ class FileClient {
     fun list(base:String,token:String)=JSONArray(call(base,token,"/identity/v1/files",null,"GET"))
     fun upload(base:String,token:String,name:String,type:String,base64:String)=JSONObject(call(base,token,"/identity/v1/files",
         JSONObject().put("name",name).put("content_type",type).put("content_base64",base64),"POST"))
+    fun download(base:String,token:String,id:String)=JSONObject(call(base,token,"/identity/v1/files/$id",null,"GET"))
     fun delete(base:String,token:String,id:String)=JSONObject(call(base,token,"/identity/v1/files/$id",null,"DELETE"))
     private fun call(base:String,token:String,path:String,body:JSONObject?,method:String):String {
         val root=base.trim().trimEnd('/')
