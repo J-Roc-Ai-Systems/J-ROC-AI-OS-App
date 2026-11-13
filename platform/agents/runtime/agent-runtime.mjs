@@ -6,6 +6,17 @@ function digest(value) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
+function sanitizeOutput(value) {
+  const secretField = /(password|secret|token|authorization|cookie|private.?key|api.?key)/i;
+  if (Array.isArray(value)) return value.map(sanitizeOutput);
+  if (!value || typeof value !== "object") return value;
+  const safe = {};
+  for (const [key, child] of Object.entries(value)) {
+    safe[key] = secretField.test(key) ? "[REDACTED]" : sanitizeOutput(child);
+  }
+  return safe;
+}
+
 function validateRequest(request) {
   if (!request || typeof request !== "object") {
     throw new AgentRuntimeError("INVALID_INPUT", "A JSON agent request is required.", 400);
@@ -84,7 +95,21 @@ export class AgentRuntime {
       throw new AgentRuntimeError("AGENT_VERSION_MISMATCH", "The requested agent version does not match the registered version.", 409);
     }
 
-    const authorization = await this.policyEngine.authorize({ manifest, request, principal, host });
+    let authorization;
+    try {
+      authorization = await this.policyEngine.authorize({ manifest, request, principal, host });
+    } catch (error) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: manifest.agentId,
+        tenantId: request.tenantId,
+        principalId: principal?.principalId ?? null,
+        capability: request.capability,
+        errorCode: error instanceof AgentRuntimeError ? error.code : "PERMISSION_DENIED"
+      });
+      throw error;
+    }
     for (const dependencyId of (manifest.dependencies?.agents ?? [])) {
       const normalizedId = dependencyId.startsWith("jrocai.") ? dependencyId : `jrocai.${dependencyId}`;
       const dependency = this.registry.getAgent(normalizedId);
@@ -151,7 +176,7 @@ export class AgentRuntime {
         agentId: manifest.agentId,
         agentVersion: manifest.version,
         status: "completed",
-        output: output ?? {},
+        output: sanitizeOutput(output ?? {}),
         evidence: [],
         auditEventId,
         errors: []
