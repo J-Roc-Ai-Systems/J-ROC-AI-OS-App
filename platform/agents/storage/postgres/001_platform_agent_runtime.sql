@@ -251,10 +251,23 @@ create or replace function public.claim_platform_agent_job(
   p_lease_seconds integer default 120
 )
 returns setof public.platform_agent_jobs
-language sql
+language plpgsql
 security definer
 set search_path = public, pg_temp
-as $$
+as $
+begin
+  -- A worker may crash after receiving its final attempt. Close that lease
+  -- instead of leaving a permanently running job that can never be claimed.
+  update public.platform_agent_jobs
+     set state = 'failed',
+         error_code = coalesce(error_code, 'MAX_ATTEMPTS_EXCEEDED'),
+         lease_expires_at = null,
+         updated_at = clock_timestamp()
+   where state = 'running'
+     and attempts >= max_attempts
+     and lease_expires_at <= clock_timestamp();
+
+  return query
   with candidate as (
     select job_id
       from public.platform_agent_jobs
@@ -273,7 +286,8 @@ as $$
     from candidate
    where job.job_id = candidate.job_id
   returning job.*;
-$$;
+end;
+$;
 
 create or replace function public.complete_platform_agent_job(
   p_job_id uuid,
