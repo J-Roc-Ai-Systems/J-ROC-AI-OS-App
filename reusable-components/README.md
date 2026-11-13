@@ -10,12 +10,14 @@ This directory is the shared library for reusable application, backend, agent, w
 - Generated code is reviewed before execution or release.
 
 ## Categories
-- `application-templates/`
-- `agent-templates/`
-- `worker-templates/`
-- `workflow-templates/`
-- `integration-templates/`
-- `security-components/`
-- `database-components/`
-- `android-components/`
-- `documentation-templates/`
+- `application-templates/` — application and project scaffolds.
+- `agent-templates/` — agent capability and permission contracts.
+- `worker-templates/` — worker enrollment and execution contracts.
+- `workflow-templates/` — versioned workflow definitions.
+- `integration-templates/` — secret-reference-only integration contracts.
+- `security-templates/` — deny-by-default security contracts.
+- `database-migrations/` — migration authoring and upgrade rules.
+- `android-components/` — reusable Jetpack Compose and Android guidance.
+- `build-templates/` — approval-gated build recipes.
+- `observability-templates/` — safe audit and telemetry conventions.
+- `documentation-templates/` — reusable operator and developer documentation.
