@@ -111,3 +111,129 @@ def environment_readiness():
  except ValueError:limit=0
  enabled=os.getenv("JROCAI_ALLOW_PAID_CLOUD","false").lower()=="true" and limit>0
  return {"secret_values_returned":False,"variables":[{"name":n,"configured":bool(os.getenv(n))} for n in names],"paid_execution_enabled":enabled,"spending_limit_usd":limit if enabled else 0}
+
+
+# Specialized Wave 6–10 service contracts. These remain metadata/workflow services;
+# execution is delegated to the authenticated, leased production worker queue.
+from .models import JobSubmission
+from .workers import workers
+
+RESOURCE_TYPES = {
+ "agent_profiles":51,"source_reviews":52,"repository_snapshots":53,"change_proposals":54,
+ "build_requests":55,"test_runs":56,"documentation_reviews":57,"agent_delegations":58,
+ "agent_knowledge":59,"agent_evaluations":60,"sdk_releases":61,"application_projects":62,
+ "website_projects":63,"workflow_definitions":64,"interface_components":65,"integrations":66,
+ "api_versions":67,"developer_workspaces":68,"dependency_reviews":69,"release_plans":70,
+ "operating_system_services":71,"device_enrollments":72,"local_models":73,"model_routes":74,
+ "accessibility_profiles":75,"file_indexes":76,"system_diagnostics":77,"network_profiles":78,
+ "backup_manifests":79,"privacy_consents":80,"organizations":81,"role_assignments":82,
+ "identity_providers":83,"security_findings":84,"threat_indicators":85,"vulnerability_findings":86,
+ "compliance_controls":87,"data_policies":88,"service_incidents":89,"recovery_plans":90,
+ "marketplace_extensions":91,"extension_reviews":92,"entitlements":93,"billing_entries":94,
+ "partners":95,"onboarding_records":96,"attribution_events":97,"customer_health":98,
+ "export_requests":99,"certification_reviews":100
+}
+RESOURCE_STATES={"draft","pending","awaiting_approval","approved","active","paused","completed","rejected","archived"}
+RESOURCE_TERMINAL={"completed","rejected","archived"}
+SENSITIVE_KEYS=("password","secret","token","credential","private_key","api_key","authorization","access_key")
+RESOURCE_REQUIRED={
+ "source_reviews":("repository",),"repository_snapshots":("repository","commit"),
+ "change_proposals":("repository","changes"),"build_requests":("project_id","build_target"),
+ "test_runs":("suite",),"workflow_definitions":("steps",),"device_enrollments":("device_id","owner_confirmation"),
+ "local_models":("model_id","runtime"),"model_routes":("route_name","fallback_policy"),
+ "security_findings":("title","severity","source"),"threat_indicators":("indicator","source"),
+ "vulnerability_findings":("asset","finding_id","severity"),"marketplace_extensions":("extension_id","version","manifest"),
+ "extension_reviews":("extension_id","reviewer"),"entitlements":("subject_id","entitlement"),
+ "export_requests":("subject_id","format","scope"),"privacy_consents":("subject_id","purpose","granted")
+}
+def _clean_resource(value):
+ if isinstance(value,dict):
+  return {str(k):_clean_resource(v) for k,v in value.items() if not any(x in str(k).lower() for x in SENSITIVE_KEYS)}
+ if isinstance(value,list):return [_clean_resource(v) for v in value[:500]]
+ if isinstance(value,str):return value[:20000]
+ if value is None or isinstance(value,(bool,int,float)):return value
+ return str(value)[:2000]
+
+def _resource_schema():
+ c=db.connect()
+ c.execute("""CREATE TABLE IF NOT EXISTS wave610_resources(
+  resource_id TEXT PRIMARY KEY,resource_type TEXT NOT NULL,batch INTEGER NOT NULL,
+  title TEXT NOT NULL,state TEXT NOT NULL,owner_reference TEXT,data TEXT NOT NULL,
+  created_at TEXT NOT NULL,updated_at TEXT NOT NULL)""")
+ c.execute("CREATE INDEX IF NOT EXISTS idx_wave610_resources ON wave610_resources(resource_type,state,updated_at)")
+
+class ResourceCreate(BaseModel):
+ model_config=ConfigDict(extra="forbid")
+ title:str=Field(min_length=2,max_length=180)
+ state:str=Field(default="draft",pattern="^(draft|pending|awaiting_approval|approved|active|paused|completed|rejected|archived)$")
+ owner_reference:str|None=Field(default=None,max_length=180)
+ data:dict[str,Any]=Field(default_factory=dict)
+
+class ResourceState(BaseModel):
+ model_config=ConfigDict(extra="forbid")
+ state:str=Field(pattern="^(draft|pending|awaiting_approval|approved|active|paused|completed|rejected|archived)$")
+ reason:str=Field(min_length=3,max_length=1000)
+
+@router.get("/wave-resources/catalog")
+def wave_resource_catalog():
+ return {"resources":[{"resource_type":k,"batch":v,"wave":(v-1)//10+1,"required_fields":list(RESOURCE_REQUIRED.get(k,()))} for k,v in RESOURCE_TYPES.items()],"count":len(RESOURCE_TYPES)}
+
+@router.post("/wave-resources/{resource_type}")
+def create_wave_resource(resource_type:str,item:ResourceCreate):
+ if resource_type not in RESOURCE_TYPES:raise HTTPException(404,"Wave resource type is not registered.")
+ required=RESOURCE_REQUIRED.get(resource_type,())
+ missing=[key for key in required if key not in item.data or item.data[key] in (None,"",[],{})]
+ if missing:raise HTTPException(422,{"message":"Required domain fields are missing.","fields":missing})
+ data=_clean_resource(item.data)
+ if len(json.dumps(data,ensure_ascii=False))>100000:raise HTTPException(413,"Resource data exceeds 100 kilobytes.")
+ if resource_type=="device_enrollments" and data.get("owner_confirmation") is not True:raise HTTPException(403,"Device owner confirmation is required.")
+ if resource_type=="local_models" and data.get("runtime") not in {"local","localhost"}:raise HTTPException(403,"This model registry accepts local runtimes only under the zero-dollar default.")
+ if resource_type=="marketplace_extensions" and item.state in {"active","approved"}:raise HTTPException(409,"Extensions must pass a separate review before activation.")
+ if resource_type=="entitlements" and any(k in data for k in ("card_number","payment_token","payment_method")):raise HTTPException(422,"Payment credentials are not accepted by entitlement records.")
+ _resource_schema(); rid=str(uuid.uuid4()); now=utc_now()
+ db.execute("INSERT INTO wave610_resources VALUES(?,?,?,?,?,?,?,?,?)",(rid,resource_type,RESOURCE_TYPES[resource_type],item.title,item.state,item.owner_reference,db.encode(data),now,now))
+ audit("wave610_resource.create",resource_type,rid,item.title)
+ return _wave_resource(db.one("SELECT * FROM wave610_resources WHERE resource_id=?",(rid,)))
+
+def _wave_resource(row):
+ if row:row["data"]=db.decode(row["data"],{})
+ return row
+
+@router.get("/wave-resources/{resource_type}")
+def list_wave_resources(resource_type:str,state:str|None=None,limit:int=Query(default=100,ge=1,le=500)):
+ if resource_type not in RESOURCE_TYPES:raise HTTPException(404,"Wave resource type is not registered.")
+ _resource_schema()
+ rows=db.many("SELECT * FROM wave610_resources WHERE resource_type=? AND state=? ORDER BY updated_at DESC LIMIT ?",(resource_type,state,limit)) if state else db.many("SELECT * FROM wave610_resources WHERE resource_type=? ORDER BY updated_at DESC LIMIT ?",(resource_type,limit))
+ return [_wave_resource(r) for r in rows]
+
+@router.get("/wave-resources/{resource_type}/{resource_id}")
+def get_wave_resource(resource_type:str,resource_id:str):
+ if resource_type not in RESOURCE_TYPES:raise HTTPException(404,"Wave resource type is not registered.")
+ _resource_schema(); row=_wave_resource(db.one("SELECT * FROM wave610_resources WHERE resource_type=? AND resource_id=?",(resource_type,resource_id)))
+ if not row:raise HTTPException(404,"Wave resource not found.")
+ return row
+
+@router.patch("/wave-resources/{resource_type}/{resource_id}/state")
+def update_wave_resource_state(resource_type:str,resource_id:str,item:ResourceState):
+ if resource_type not in RESOURCE_TYPES:raise HTTPException(404,"Wave resource type is not registered.")
+ _resource_schema(); row=db.one("SELECT state FROM wave610_resources WHERE resource_type=? AND resource_id=?",(resource_type,resource_id))
+ if not row:raise HTTPException(404,"Wave resource not found.")
+ if row["state"] in RESOURCE_TERMINAL:raise HTTPException(409,"Terminal resource cannot be reopened.")
+ if item.state=="active" and resource_type in {"marketplace_extensions","extension_reviews","release_plans","identity_providers"} and row["state"] not in {"approved"}:raise HTTPException(409,"This resource requires approval before activation.")
+ db.execute("UPDATE wave610_resources SET state=?,updated_at=? WHERE resource_type=? AND resource_id=?",(item.state,utc_now(),resource_type,resource_id))
+ audit("wave610_resource.state",resource_type,resource_id,item.reason)
+ return get_wave_resource(resource_type,resource_id)
+
+@router.post("/agent-jobs/{job_id}/dispatch")
+def dispatch_approved_agent_job(job_id:str):
+ _ensure()
+ row=db.one("SELECT * FROM platform_agent_jobs WHERE job_id=?",(job_id,))
+ if not row:raise HTTPException(404,"Agent job not found.")
+ if row["state"]!="approved_queued":raise HTTPException(409,"Agent job must be explicitly approved before dispatch.")
+ if row.get("worker_job_id"):raise HTTPException(409,"Agent job was already dispatched.")
+ payload={"agent_job_id":job_id,"agent_id":row["agent_id"],"batch":row["batch"],"job_type":row["job_type"],"title":row["title"],"objective":row["objective"],"repository":row["repository"],"file_scope":db.decode(row["file_scope"],[]),"execution_contract":"structured_task_only_no_arbitrary_shell"}
+ queued=workers.submit(JobSubmission(job_type="agent.structured_task",payload=payload,priority=5,required_capability="agent:"+row["agent_id"],max_attempts=2))
+ db.execute("ALTER TABLE platform_agent_jobs ADD COLUMN worker_job_id TEXT") if "worker_job_id" not in [r["name"] for r in db.many("PRAGMA table_info(platform_agent_jobs)")] else None
+ db.execute("UPDATE platform_agent_jobs SET worker_job_id=?,updated_at=? WHERE job_id=?",(queued["job_id"],utc_now(),job_id))
+ audit("agent_job.dispatch","agent_job",job_id,queued["job_id"])
+ return {"agent_job_id":job_id,"worker_job_id":queued["job_id"],"worker_queue_state":queued["state"],"required_worker_capability":"agent:"+row["agent_id"]}
