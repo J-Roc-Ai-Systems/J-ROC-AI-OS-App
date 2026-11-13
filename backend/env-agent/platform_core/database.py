@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS release_channels(channel_id TEXT PRIMARY KEY,name TEX
 CREATE TABLE IF NOT EXISTS releases(release_id TEXT PRIMARY KEY,application_id TEXT NOT NULL REFERENCES applications(application_id),version TEXT NOT NULL,channel_id TEXT NOT NULL REFERENCES release_channels(channel_id),artifact_reference TEXT NOT NULL,source_revision TEXT NOT NULL,notes TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_releases_channel ON releases(channel_id,state,created_at);
 CREATE TABLE IF NOT EXISTS release_approvals(approval_id TEXT PRIMARY KEY,release_id TEXT NOT NULL REFERENCES releases(release_id) ON DELETE CASCADE,decision TEXT NOT NULL,reviewer TEXT NOT NULL,created_at TEXT NOT NULL);
+"""),
+("0005_agent_factory_and_versions", """
+CREATE TABLE IF NOT EXISTS agent_definitions(agent_id TEXT PRIMARY KEY,name TEXT NOT NULL,purpose TEXT NOT NULL,state TEXT NOT NULL,current_version INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS agent_versions(agent_version_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL REFERENCES agent_definitions(agent_id) ON DELETE CASCADE,version INTEGER NOT NULL,capabilities TEXT NOT NULL,permissions TEXT NOT NULL,worker_capability TEXT NOT NULL,configuration TEXT NOT NULL,execution_policy TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(agent_id,version));
+CREATE INDEX IF NOT EXISTS idx_agent_versions_state ON agent_versions(agent_id,state,version);
 """)]
 class PlatformDatabase:
  def __init__(self,path=None): self.path=Path(path) if path else _DEFAULT_PATH; self._connection=None
