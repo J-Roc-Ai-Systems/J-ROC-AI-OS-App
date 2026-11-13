@@ -109,7 +109,7 @@ export class PostgresTaskQueue {
        returning job_id`,
       [
         tenantId, request.requestId, request.agentId, request.agentVersion,
-        request.capability, JSON.stringify(request)
+        request.capability, JSON.stringify(redact(request))
       ]
     );
     const jobId = result.rows?.[0]?.job_id;
