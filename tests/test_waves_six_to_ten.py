@@ -66,6 +66,8 @@ class WaveSixTenTests(unittest.TestCase):
   self.assertEqual(queued["worker_job_id"],claimed["job_id"])
   completed=worker_module.workers.finish(claimed["job_id"],"source-runner",{"status":"reviewed","files_checked":2})
   self.assertEqual("completed",completed["state"])
+  with self.assertRaises(Exception):m.dispatch_approved_agent_job(job["job_id"])
+  self.assertEqual(1,m.db.one("SELECT COUNT(*) AS count FROM jobs")["count"])
   self.assertEqual(queued["worker_job_id"],m.db.one("SELECT worker_job_id FROM platform_agent_jobs WHERE job_id=?",(job["job_id"],))["worker_job_id"])
  def test_environment_readiness_never_returns_secret_values(self):
   result=m.environment_readiness()
