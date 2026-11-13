@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit
 class RepairClient {
     private val http=OkHttpClient.Builder().callTimeout(20,TimeUnit.SECONDS).build()
     private val jsonType="application/json; charset=utf-8".toMediaType()
-    fun profiles(baseUrl:String,token:String)=request(baseUrl,token,"/platform/v1/repair/profiles",null,"GET") .let(::JSONArray)
-    fun sessions(baseUrl:String,token:String)=request(baseUrl,token,"/platform/v1/repair/sessions",null,"GET").let(::JSONArray)
+    fun profiles(baseUrl:String,token:String)=JSONArray(request(baseUrl,token,"/platform/v1/repair/profiles",null,"GET"))
+    fun sessions(baseUrl:String,token:String)=JSONArray(request(baseUrl,token,"/platform/v1/repair/sessions",null,"GET"))
     fun start(baseUrl:String,token:String,issue:String,method:String,deviceId:String,profileId:String):JSONObject {
         val body=JSONObject().put("issue_summary",issue).put("connection_method",method)
         if(deviceId.isNotBlank())body.put("device_id",deviceId)
