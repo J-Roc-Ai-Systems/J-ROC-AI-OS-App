@@ -7,7 +7,7 @@ from .models import utc_now
 from .identity import require_user
 from .security import audit
 router=APIRouter(prefix="/identity/v1/memory",tags=["J-ROC AI Personal Memory"])
-_SECRET_PATTERN=re.compile(r"(?i)(api[_-]?key|access[_-]?token|password|client[_-]?secret)\\s*[:=]\\s*[^\\s,;]+|-----BEGIN [A-Z ]*PRIVATE KEY-----")
+_SECRET_PATTERN=re.compile(r"(?i)(api[_-]?key|access[_-]?token|password|client[_-]?secret)\s*[:=]\s*[^\s,;]+|-----BEGIN [A-Z ]*PRIVATE KEY-----")
 class MemoryInput(BaseModel):
  category:str=Field(min_length=2,max_length=60)
  title:str=Field(min_length=2,max_length=160)
