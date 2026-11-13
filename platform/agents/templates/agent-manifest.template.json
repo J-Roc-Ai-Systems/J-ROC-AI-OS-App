@@ -25,6 +25,9 @@
     "cloud"
   ],
   "permissions": {
+    "capabilities": [
+      "example.read"
+    ],
     "filesystem": [],
     "network": [],
     "repositories": [],
@@ -57,10 +60,12 @@
     "retryLimit": 1
   },
   "health": {
+    "status": "pending",
     "readinessCheck": "not-implemented",
     "lastVerifiedAt": null
   },
   "tests": {
+    "status": "pending",
     "requiredBeforeAvailable": true,
     "testPaths": []
   }
