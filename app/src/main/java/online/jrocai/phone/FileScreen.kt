@@ -40,7 +40,6 @@ fun FileScreen(settings:SecureSettings,client:FileClient,onBack:()->Unit,runOnMa
     var status by remember { mutableStateOf("Sign in to upload and manage encrypted files.") }
     var busy by remember { mutableStateOf(false) }
     var pendingDownload by remember { mutableStateOf<ByteArray?>(null) }
-    var pendingMime by remember { mutableStateOf("application/octet-stream") }
     val savePicker=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
         val bytes=pendingDownload
         if(uri!=null && bytes!=null) {
@@ -103,6 +102,17 @@ fun FileScreen(settings:SecureSettings,client:FileClient,onBack:()->Unit,runOnMa
                     Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
                         Text(file.optString("name"),color=Color.White,fontWeight=FontWeight.Bold)
                         Text(file.optString("content_type")+" • "+file.optLong("size_bytes")+" bytes",color=Color(0xFFAAB6C5),fontSize=11.sp)
+                        Button(enabled=!busy,onClick={
+                            val token=settings.readIdentityToken();val base=settings.readGatewayUrl()
+                            if(!busy){busy=true;Thread{val result=runCatching{client.download(base,token,id)};runOnMain{
+                                result.onSuccess{data->
+                                    val decoded=runCatching{Base64.decode(data.optString("content_base64"),Base64.DEFAULT)}
+                                    decoded.onSuccess{bytes->pendingDownload=bytes;savePicker.launch(data.optString("name","download.bin"))}
+                                        .onFailure{status="Downloaded file could not be decoded."}
+                                }.onFailure{status=it.message ?: "File download failed."}
+                                busy=false
+                            }}.start()}
+                        }){Text("Download and Decrypt")}
                         Button(enabled=!busy,onClick={
                             val token=settings.readIdentityToken();val base=settings.readGatewayUrl()
                             if(!busy){busy=true;Thread{val result=runCatching{client.delete(base,token,id);client.list(base,token)};runOnMain{result.onSuccess{data->files=(0 until data.length()).mapNotNull{data.optJSONObject(it)};status="Encrypted file deleted."}.onFailure{status=it.message ?: "File deletion failed."};busy=false}}.start()}
