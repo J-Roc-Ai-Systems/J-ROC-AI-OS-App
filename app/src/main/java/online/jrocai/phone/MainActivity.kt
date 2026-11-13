@@ -57,7 +57,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Model Center",
-    "Conversations", "Device Tools", "Settings"
+    "Conversations", "Device Tools", "Settings", "Wave 2"
 )
 
 class MainActivity : ComponentActivity() {
@@ -141,6 +141,7 @@ private fun JrocPhoneApp(
                     messages.clear()
                 })
                 "Device Tools" -> DeviceTools()
+                "Wave 2" -> WaveTwoHub(onBack = { selected = "Command Center" })
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
                     messages.clear()
@@ -174,6 +175,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Conversations", "Browse and clear locally saved chat history.", "View History") { onOpen("Conversations") }
         ModuleCard("Device Tools", "Review Android version, hardware and build details.", "Inspect Device") { onOpen("Device Tools") }
         ModuleCard("J-ROC AI Settings", "Manage privacy, local credentials and preferences.", "Open Settings") { onOpen("Settings") }
+        ModuleCard("Wave 2 Production Platform", "Open the ten intelligence and production infrastructure areas.", "Open Wave 2") { onOpen("Wave 2") }
         Text("J-ROC AI • Local-first phone workspace", color = Muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }

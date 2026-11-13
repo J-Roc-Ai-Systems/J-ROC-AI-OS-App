@@ -10,7 +10,10 @@ import httpx
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="J-ROC AI Env Agent", version="0.1.0")
+app = FastAPI(title="J-ROC AI Env Agent", version="0.2.0")
+
+from platform_core.api import router as platform_router
+app.include_router(platform_router)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
