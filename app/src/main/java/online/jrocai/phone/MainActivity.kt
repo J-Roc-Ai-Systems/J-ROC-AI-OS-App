@@ -55,6 +55,7 @@ import online.jrocai.phone.data.AgentFactoryClient
 import online.jrocai.phone.data.FactoryClient
 import online.jrocai.phone.data.EnterpriseClient
 import online.jrocai.phone.data.ReleaseClient
+import online.jrocai.phone.data.FileClient
 import java.text.DateFormat
 import java.util.Date
 
@@ -65,7 +66,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Repair", "Model Center",
-    "Conversations", "Device Tools", "Account", "Memory", "Agent Factory", "Application Factory", "Enterprise", "Releases", "Settings", "Platform Hub"
+    "Conversations", "Device Tools", "Account", "Memory", "Secure Files", "Agent Factory", "Application Factory", "Enterprise", "Releases", "Settings", "Platform Hub"
 )
 
 class MainActivity : ComponentActivity() {
@@ -157,6 +158,7 @@ private fun JrocPhoneApp(
                 "Platform Hub" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
                 "Account" -> AccountScreen(settings = secureSettings, client = IdentityClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Memory" -> MemoryScreen(settings = secureSettings, client = MemoryClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
+                "Secure Files" -> FileScreen(settings = secureSettings, client = FileClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
                     messages.clear()
@@ -192,6 +194,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Device Tools", "Review Android version, hardware and build details.", "Inspect Device") { onOpen("Device Tools") }
         ModuleCard("Account", "Register or sign in using a protected account session.", "Open Account") { onOpen("Account") }
         ModuleCard("Personal Memory", "Create and manage private account notes under your control.", "Open Memory") { onOpen("Memory") }
+        ModuleCard("Secure Files", "Upload and manage account-owned encrypted files.", "Open Secure Files") { onOpen("Secure Files") }
         ModuleCard("Agent Factory", "Create, version, publish and disable permission-bounded agents.", "Open Agent Factory") { onOpen("Agent Factory") }
         ModuleCard("Application Factory", "Register projects, define build recipes and approve worker build jobs.", "Open Application Factory") { onOpen("Application Factory") }
         ModuleCard("Enterprise Operations", "Manage organizations and submit device fleet enrollment requests.", "Open Enterprise") { onOpen("Enterprise") }
