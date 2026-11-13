@@ -45,6 +45,8 @@ def _ensure():
  c.execute("""CREATE TABLE IF NOT EXISTS platform_agent_registry(agent_id TEXT PRIMARY KEY,display_name TEXT NOT NULL,capabilities TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)""")
  c.execute("""CREATE TABLE IF NOT EXISTS platform_agent_jobs(job_id TEXT PRIMARY KEY,job_type TEXT NOT NULL,title TEXT NOT NULL,objective TEXT NOT NULL,batch INTEGER NOT NULL,agent_id TEXT NOT NULL,repository TEXT,file_scope TEXT NOT NULL,state TEXT NOT NULL,approval_required INTEGER NOT NULL,decision_reason TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)""")
  c.execute("CREATE INDEX IF NOT EXISTS idx_agent_jobs_state ON platform_agent_jobs(state,created_at)")
+ columns={row["name"] for row in c.execute("PRAGMA table_info(platform_agent_jobs)").fetchall()}
+ if "worker_job_id" not in columns:c.execute("ALTER TABLE platform_agent_jobs ADD COLUMN worker_job_id TEXT")
 
 def _job(row:dict[str,Any]|None):
  if not row:return None
@@ -233,7 +235,34 @@ def dispatch_approved_agent_job(job_id:str):
  if row.get("worker_job_id"):raise HTTPException(409,"Agent job was already dispatched.")
  payload={"agent_job_id":job_id,"agent_id":row["agent_id"],"batch":row["batch"],"job_type":row["job_type"],"title":row["title"],"objective":row["objective"],"repository":row["repository"],"file_scope":db.decode(row["file_scope"],[]),"execution_contract":"structured_task_only_no_arbitrary_shell"}
  queued=workers.submit(JobSubmission(job_type="agent.structured_task",payload=payload,priority=5,required_capability="agent:"+row["agent_id"],max_attempts=2))
- db.execute("ALTER TABLE platform_agent_jobs ADD COLUMN worker_job_id TEXT") if "worker_job_id" not in [r["name"] for r in db.many("PRAGMA table_info(platform_agent_jobs)")] else None
  db.execute("UPDATE platform_agent_jobs SET worker_job_id=?,updated_at=? WHERE job_id=?",(queued["job_id"],utc_now(),job_id))
  audit("agent_job.dispatch","agent_job",job_id,queued["job_id"])
  return {"agent_job_id":job_id,"worker_job_id":queued["job_id"],"worker_queue_state":queued["state"],"required_worker_capability":"agent:"+row["agent_id"]}
+
+
+DEFAULT_AGENTS=[
+ ("source-agent","Source Agent",["repository.inspect","source.search","change.propose"]),
+ ("android-agent","Android Agent",["android.inspect","android.build","android.test"]),
+ ("environment-agent","Environment Agent",["environment.readiness","secret.references"]),
+ ("test-agent","Test Agent",["tests.plan","tests.run","results.report"]),
+ ("security-agent","Security Agent",["security.review","dependency.audit"]),
+ ("documentation-agent","Documentation Agent",["documentation.review","documentation.propose"]),
+ ("build-agent","Build Agent",["build.execute","artifact.verify"]),
+ ("release-agent","Release Agent",["release.validate","release.package"]),
+ ("repair-agent","Repair Intelligence Agent",["repair.diagnostics","device.compatibility"]),
+ ("academy-agent","Academy Agent",["academy.course","academy.progress"]),
+ ("website-agent","Website Factory Agent",["website.generate","brand.validate"]),
+ ("model-agent","Model Routing Agent",["model.local.discover","model.evaluate"]),
+ ("enterprise-agent","Enterprise Operations Agent",["enterprise.audit","compliance.review"]),
+ ("marketplace-agent","Marketplace Agent",["extension.validate","marketplace.catalog"])
+]
+def ensure_default_agents():
+ _ensure()
+ created=[]
+ for agent_id,name,capabilities in DEFAULT_AGENTS:
+  if not db.one("SELECT agent_id FROM platform_agent_registry WHERE agent_id=?",(agent_id,)):
+   now=utc_now()
+   db.execute("INSERT INTO platform_agent_registry(agent_id,display_name,capabilities,status,created_at,updated_at) VALUES(?,?,?,?,?,?)",(agent_id,name,db.encode(capabilities),"registered",now,now))
+   audit("agent.bootstrap","agent",agent_id,"platform default agent registered")
+   created.append(agent_id)
+ return {"registered":len(DEFAULT_AGENTS),"created":created}
