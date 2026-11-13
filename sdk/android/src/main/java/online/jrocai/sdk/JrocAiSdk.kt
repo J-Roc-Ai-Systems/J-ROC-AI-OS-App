@@ -23,6 +23,28 @@ class JrocAiSdk(
 
     fun checkHealth(callback: SdkCallback<JSONObject>) = request("GET", "/health", null, callback)
 
+    fun getAgents(callback: SdkCallback<JSONObject>) =
+        request("GET", "/v1/agents", null, callback)
+
+    fun inspectRepository(owner: String, repository: String, callback: SdkCallback<JSONObject>) {
+        request("GET", "/v1/repositories/${encodePath(owner)}/${encodePath(repository)}", null, callback)
+    }
+
+    fun readRepositoryFile(
+        owner: String,
+        repository: String,
+        filePath: String,
+        ref: String? = null,
+        callback: SdkCallback<JSONObject>
+    ) {
+        val query = "?path=" + java.net.URLEncoder.encode(filePath, "UTF-8") +
+            (ref?.let { "&ref=" + java.net.URLEncoder.encode(it, "UTF-8") } ?: "")
+        request("GET", "/v1/repositories/${encodePath(owner)}/${encodePath(repository)}/file$query", null, callback)
+    }
+
+    private fun encodePath(value: String): String =
+        java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
+
     fun submitSourceTask(
         agentId: String,
         taskType: String,
