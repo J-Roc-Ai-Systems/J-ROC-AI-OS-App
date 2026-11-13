@@ -1,0 +1,76 @@
+{
+  "contractVersion": "1.0.0",
+  "transport": "host-defined; JSON-compatible payloads",
+  "request": {
+    "requestId": "unique-id",
+    "agentId": "jrocai.agent-id",
+    "agentVersion": "1.0.0",
+    "capability": "domain.action",
+    "tenantId": "required-by-multi-tenant-host",
+    "requestedBy": {
+      "principalId": "caller-id",
+      "principalType": "user-or-service"
+    },
+    "input": {},
+    "context": {
+      "locale": "optional",
+      "correlationId": "optional",
+      "deadlineEpochMilliseconds": null
+    },
+    "approval": {
+      "approvalId": null,
+      "standingAuthorizationId": null
+    }
+  },
+  "response": {
+    "requestId": "same-as-request",
+    "agentId": "same-as-agent",
+    "status": "proposed|attempted|completed|verified|failed|needs_approval",
+    "output": {},
+    "evidence": [],
+    "auditEventId": "required",
+    "errors": []
+  },
+  "dispatchChecks": [
+    "agent lifecycle state is available",
+    "manifest and version match",
+    "capability is declared",
+    "host is supported",
+    "caller is authenticated",
+    "tenant boundary is valid",
+    "permissions are granted",
+    "dependencies are healthy",
+    "approval exists when required",
+    "audit service is writable"
+  ],
+  "lifecycleEvents": [
+    "registered",
+    "available",
+    "degraded",
+    "disabled",
+    "retired"
+  ],
+  "hostAdapterResponsibilities": [
+    "translate host-specific inputs",
+    "supply authenticated caller context",
+    "enforce timeouts and cancellation",
+    "provide approved storage and network adapters",
+    "forward audit events",
+    "never bypass central policy"
+  ],
+  "errorCodes": [
+    "AGENT_NOT_FOUND",
+    "AGENT_NOT_AVAILABLE",
+    "CAPABILITY_NOT_DECLARED",
+    "HOST_NOT_SUPPORTED",
+    "AUTHENTICATION_REQUIRED",
+    "PERMISSION_DENIED",
+    "TENANT_BOUNDARY_DENIED",
+    "APPROVAL_REQUIRED",
+    "DEPENDENCY_UNAVAILABLE",
+    "TIMEOUT",
+    "AUDIT_UNAVAILABLE",
+    "INVALID_INPUT",
+    "INTERNAL_ERROR"
+  ]
+}
