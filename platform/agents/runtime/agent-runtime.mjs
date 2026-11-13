@@ -66,11 +66,53 @@ export class AgentRuntime {
 
   async execute({ request, principal, host }) {
     validateRequest(request);
+    if (!principal?.authenticated || !principal.principalId || !principal.tenantId) {
+      throw new AgentRuntimeError("AUTHENTICATION_REQUIRED", "An authenticated platform identity is required.", 401);
+    }
+    if (request.tenantId !== principal.tenantId ||
+        request.requestedBy?.principalId !== principal.principalId) {
+      throw new AgentRuntimeError("TENANT_BOUNDARY_DENIED", "The request identity or tenant does not match the authenticated caller.", 403);
+    }
+
+    // Revalidate authority before consulting idempotency storage. A cached
+    // response is not an authentication or authorization bypass.
+    const manifest = this.registry.getAgent(request.agentId);
+    if (!manifest || manifest.lifecycleState !== "available" || !manifest.manifestLoaded) {
+      await this.#audit({
+        event: "agent.dispatch.denied",
+        requestId: request.requestId,
+        agentId: request.agentId,
+        tenantId: request.tenantId,
+        reason: manifest ? "AGENT_NOT_AVAILABLE" : "AGENT_NOT_FOUND"
+      });
+      throw new AgentRuntimeError(manifest ? "AGENT_NOT_AVAILABLE" : "AGENT_NOT_FOUND",
+        manifest ? "The agent is not enabled for execution." : "The requested agent is not registered.",
+        manifest ? 409 : 404);
+    }
+    if (manifest.version !== request.agentVersion) {
+      throw new AgentRuntimeError("AGENT_VERSION_MISMATCH", "The requested agent version does not match the registered version.", 409);
+    }
+    if (!manifest.supportedHosts.includes(host)) {
+      throw new AgentRuntimeError("HOST_NOT_SUPPORTED", "This agent is not registered for the requesting host.", 403);
+    }
+    const declaredCapability = manifest.capabilities.find((item) =>
+      (typeof item === "string" ? item : item?.id) === request.capability
+    );
+    if (!declaredCapability || !manifest.permissions.capabilities.includes(request.capability)) {
+      throw new AgentRuntimeError("CAPABILITY_NOT_DECLARED", "The requested capability is not explicitly declared and permitted.", 403);
+    }
+    if (!Array.isArray(principal.grantedCapabilities) ||
+        !principal.grantedCapabilities.includes(request.capability)) {
+      throw new AgentRuntimeError("PERMISSION_DENIED", "The caller has not been granted this capability.", 403);
+    }
+
     const fingerprint = digest({
       agentId: request.agentId,
       agentVersion: request.agentVersion,
       capability: request.capability,
       tenantId: request.tenantId,
+      principalId: principal.principalId,
+      host,
       requestedBy: request.requestedBy,
       input: request.input
     });
@@ -105,7 +147,7 @@ export class AgentRuntime {
     }
 
     try {
-      return await this.#executeNew({ request, principal, host }, { fingerprint, idempotencyKey, ownsReservation });
+      return await this.#executeNew({ request, principal, host, manifest }, { fingerprint, idempotencyKey, ownsReservation });
     } catch (error) {
       if (ownsReservation && this.idempotencyStore.fail) {
         try {
@@ -123,21 +165,7 @@ export class AgentRuntime {
     }
   }
 
-  async #executeNew({ request, principal, host }, reservation) {
-    const manifest = this.registry.getAgent(request.agentId);
-    if (!manifest) {
-      await this.#audit({ event: "agent.dispatch.denied", requestId: request.requestId, agentId: request.agentId, reason: "AGENT_NOT_FOUND" });
-      throw new AgentRuntimeError("AGENT_NOT_FOUND", "The requested agent is not registered.", 404);
-    }
-    if (manifest.lifecycleState !== "available" || !manifest.manifestLoaded) {
-      await this.#audit({ event: "agent.dispatch.denied", requestId: request.requestId, agentId: request.agentId, reason: "AGENT_NOT_AVAILABLE" });
-      throw new AgentRuntimeError("AGENT_NOT_AVAILABLE", "The agent is registered but is not enabled for execution.", 409);
-    }
-    if (manifest.version !== request.agentVersion) {
-      await this.#audit({ event: "agent.dispatch.denied", requestId: request.requestId, agentId: request.agentId, reason: "VERSION_MISMATCH" });
-      throw new AgentRuntimeError("AGENT_VERSION_MISMATCH", "The requested agent version does not match the registered version.", 409);
-    }
-
+  async #executeNew({ request, principal, host, manifest }, reservation) {
     let authorization;
     try {
       authorization = await this.policyEngine.authorize({ manifest, request, principal, host });
