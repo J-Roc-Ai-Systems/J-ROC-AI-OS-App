@@ -1,4 +1,4 @@
-"""SQLite persistence for local-first Wave Two platform records."""
+"""SQLite persistence with ordered, repeatable schema migrations."""
 import json
 import os
 import sqlite3
@@ -26,6 +26,20 @@ CREATE INDEX IF NOT EXISTS idx_platform_events_created ON platform_events(create
 CREATE TABLE IF NOT EXISTS platform_services (service_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, version TEXT NOT NULL, capabilities TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 """
 
+MIGRATIONS = [
+    ("0001_platform_baseline", SCHEMA),
+    ("0002_worker_identity_and_leases", """
+CREATE TABLE IF NOT EXISTS worker_credentials (
+    worker_id TEXT PRIMARY KEY REFERENCES workers(worker_id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_worker_credentials_active ON worker_credentials(worker_id, revoked_at);
+CREATE INDEX IF NOT EXISTS idx_jobs_lease ON jobs(state, lease_expires_at);
+"""),
+]
+
 class PlatformDatabase:
     def __init__(self, path: str | Path | None = None):
         self.path = Path(path) if path else _DEFAULT_PATH
@@ -42,8 +56,31 @@ class PlatformDatabase:
                     self._connection.execute("PRAGMA foreign_keys=ON")
                     if str(self.path) != ":memory:":
                         self._connection.execute("PRAGMA journal_mode=WAL")
-                    self._connection.executescript(SCHEMA)
+                    self.migrate()
         return self._connection
+
+    def migrate(self):
+        connection = self._connection
+        connection.execute("CREATE TABLE IF NOT EXISTS schema_migrations (migration_id TEXT PRIMARY KEY, applied_at TEXT NOT NULL)")
+        applied = {row[0] for row in connection.execute("SELECT migration_id FROM schema_migrations")}
+        from datetime import datetime, timezone
+        for migration_id, script in MIGRATIONS:
+            if migration_id in applied:
+                continue
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                connection.executescript(script)
+                if migration_id == "0002_worker_identity_and_leases":
+                    columns = {row[1] for row in connection.execute("PRAGMA table_info(jobs)")}
+                    if "lease_expires_at" not in columns:
+                        connection.execute("ALTER TABLE jobs ADD COLUMN lease_expires_at TEXT")
+                connection.execute("INSERT INTO schema_migrations(migration_id,applied_at) VALUES(?,?)",
+                    (migration_id, datetime.now(timezone.utc).isoformat()))
+                connection.execute("COMMIT")
+            except Exception:
+                if connection.in_transaction:
+                    connection.execute("ROLLBACK")
+                raise
 
     def execute(self, sql: str, values: tuple = ()) -> int:
         with _LOCK:
@@ -71,6 +108,5 @@ class PlatformDatabase:
             return json.loads(value)
         except (TypeError, json.JSONDecodeError):
             return fallback
-
 
 db = PlatformDatabase()
