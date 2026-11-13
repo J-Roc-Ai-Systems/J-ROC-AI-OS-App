@@ -1,3 +1,9 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+}
+
 val releaseKeystorePath = System.getenv("JROCAI_ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("JROCAI_ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("JROCAI_ANDROID_KEY_ALIAS")
@@ -10,12 +16,6 @@ if (releaseRequested && listOf(releaseKeystorePath, releaseKeystorePassword, rel
     throw GradleException("Release signing secrets are missing. Configure all JROCAI_ANDROID_* values in the protected build environment.")
 }
 
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-}
-
 android {
     namespace = "online.jrocai.phone"
     compileSdk = 35
@@ -26,6 +26,24 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (!releaseKeystorePath.isNullOrBlank()) {
+                storeFile = file(releaseKeystorePath)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 
     buildFeatures {
