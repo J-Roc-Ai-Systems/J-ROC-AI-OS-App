@@ -102,16 +102,34 @@ class ChatRequest(BaseModel):
 def health():
     return {"status": "ok", "service": "jrocai-env-agent", "provider_configured": bool(os.getenv("OPENAI_API_KEY")), "cloud_execution_enabled": cloud_spending_enabled()}
 
+def local_model_base_url() -> str:
+    from urllib.parse import urlparse
+    value = os.getenv("JROCAI_LOCAL_MODEL_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    parsed = urlparse(value)
+    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"} or parsed.username or parsed.password:
+        raise HTTPException(status_code=503, detail="Local model endpoint must be an HTTP loopback address.")
+    return value
+
 @app.get("/v1/models")
 async def models(authorization: str | None = Header(default=None)):
     require_gateway_token(authorization)
+    local_data = []
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            local_response = await client.get(local_model_base_url() + "/api/tags")
+        local_response.raise_for_status()
+        local_data = [{"id": item.get("name")} for item in local_response.json().get("models", []) if item.get("name")]
+    except (httpx.HTTPError, ValueError):
+        local_data = []
+    if not cloud_spending_enabled():
+        return {"data": local_data, "provider": "ollama-local", "cloud_fallback": False}
     headers = {"Authorization": f"Bearer {provider_key()}"}
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(f"{OPENAI_BASE_URL}/models", headers=headers)
     if response.is_error:
         raise HTTPException(status_code=response.status_code, detail="Model catalog request failed at provider.")
-    data = response.json().get("data", [])
-    return {"data": [{"id": item.get("id")} for item in data if item.get("id")]}
+    cloud_data = [{"id": item.get("id")} for item in response.json().get("data", []) if item.get("id")]
+    return {"data": local_data + cloud_data, "local_count": len(local_data), "cloud_count": len(cloud_data)}
 
 @app.post("/v1/chat")
 async def chat(payload: ChatRequest, authorization: str | None = Header(default=None)):
@@ -125,6 +143,19 @@ async def chat(payload: ChatRequest, authorization: str | None = Header(default=
         )
     else:
         instructions = "You are J-ROC AI Assistant, a precise, helpful personal AI assistant."
+    local_body = {"model": payload.model, "stream": False, "messages": [
+        {"role": "system", "content": instructions}, {"role": "user", "content": payload.message}]}
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            local_response = await client.post(local_model_base_url() + "/api/chat", json=local_body)
+        local_response.raise_for_status()
+        local_text = local_response.json().get("message", {}).get("content", "")
+        if local_text:
+            return {"reply": local_text, "model": payload.model, "provider": "ollama-local", "cloud_fallback": False}
+    except (httpx.HTTPError, ValueError):
+        pass
+    if not cloud_spending_enabled():
+        raise HTTPException(status_code=503, detail="Local model is unavailable or does not contain the selected model. Cloud execution remains blocked by the zero-dollar spending gate.")
     body = {"model": payload.model, "instructions": instructions, "input": payload.message, "store": False}
     headers = {"Authorization": f"Bearer {provider_key()}", "Content-Type": "application/json"}
     async with httpx.AsyncClient(timeout=90) as client:
@@ -140,4 +171,4 @@ async def chat(payload: ChatRequest, authorization: str | None = Header(default=
                 if part.get("type") == "output_text":
                     chunks.append(part.get("text", ""))
         text = "\n".join(filter(None, chunks))
-    return {"reply": text or "No text response was returned.", "model": payload.model}
+    return {"reply": text or "No text response was returned.", "model": payload.model, "provider": "openai-cloud", "cloud_fallback": True}
