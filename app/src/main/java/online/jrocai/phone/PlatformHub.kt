@@ -30,6 +30,10 @@ import online.jrocai.phone.data.PlatformOperationsClient
 import online.jrocai.phone.data.SecureSettings
 
 private data class WaveCardData(val number:Int,val title:String,val scope:String,val state:String)
+private data class PlatformSnapshot(
+    val serviceName:String,val serviceCount:Int,val serviceNames:String,val localModelState:String,
+    val workflowCount:Int,val repairProfileCount:Int,val buildRunCount:Int,val releaseChannelCount:Int
+)
 
 @Composable
 fun PlatformHub(
@@ -42,6 +46,11 @@ fun PlatformHub(
     var connection by remember { mutableStateOf("Not connected") }
     var serviceCount by remember { mutableStateOf(0) }
     var serviceNames by remember { mutableStateOf("") }
+    var localModelState by remember { mutableStateOf("Not checked") }
+    var workflowCount by remember { mutableStateOf(0) }
+    var repairProfileCount by remember { mutableStateOf(0) }
+    var buildRunCount by remember { mutableStateOf(0) }
+    var releaseChannelCount by remember { mutableStateOf(0) }
     var error by remember { mutableStateOf("") }
     val waves=listOf(
         WaveCardData(1,"Android Phone Foundation","Command center, assistant, J-Bot, settings and local history","Existing app foundation"),
@@ -65,14 +74,28 @@ fun PlatformHub(
                     val token=settings.readGatewayToken()
                     val status=operations.status(base,token)
                     val services=operations.services(base,token)
-                    status to services
+                    val local=runCatching { operations.localModelStatus(base,token) }.getOrNull()
+                    val workflows=runCatching { operations.workflows(base,token).length() }.getOrDefault(0)
+                    val repairs=runCatching { operations.repairProfiles(base,token).length() }.getOrDefault(0)
+                    val builds=runCatching { operations.buildRuns(base,token).length() }.getOrDefault(0)
+                    val releases=runCatching { operations.releaseChannels(base,token).length() }.getOrDefault(0)
+                    PlatformSnapshot(
+                        status.optString("service","Platform connected"),services.length(),
+                        (0 until services.length()).mapNotNull { services.optJSONObject(it)?.optString("display_name") }.take(5).joinToString(", "),
+                        if(local==null) "Not available" else if(local.optBoolean("available")) "Available" else "Offline",
+                        workflows,repairs,builds,releases
+                    )
                 }
                 runOnMain {
-                    result.onSuccess { pair ->
-                        connection=pair.first.optString("service","Platform connected")
-                        serviceCount=pair.second.length()
-                        serviceNames=(0 until pair.second.length()).mapNotNull { pair.second.optJSONObject(it)?.optString("display_name") }
-                            .take(5).joinToString(", ")
+                    result.onSuccess { snapshot ->
+                        connection=snapshot.serviceName
+                        serviceCount=snapshot.serviceCount
+                        serviceNames=snapshot.serviceNames
+                        localModelState=snapshot.localModelState
+                        workflowCount=snapshot.workflowCount
+                        repairProfileCount=snapshot.repairProfileCount
+                        buildRunCount=snapshot.buildRunCount
+                        releaseChannelCount=snapshot.releaseChannelCount
                     }.onFailure { error=it.message ?: "Platform connection failed." }
                     loading=false
                 }
@@ -101,6 +124,11 @@ fun PlatformHub(
                     if(serviceCount>0) {
                         Text("Registered services: $serviceCount",color=Color(0xFF00B3FF),fontSize=12.sp)
                         Text(serviceNames,color=Color(0xFFAAB6C5),fontSize=11.sp)
+                    }
+                    if(serviceCount>0) {
+                        Text("Local model runtime: $localModelState",color=Color(0xFFAAB6C5),fontSize=11.sp)
+                        Text("Workflows: $workflowCount • Repair profiles: $repairProfileCount",color=Color(0xFFAAB6C5),fontSize=11.sp)
+                        Text("Build runs: $buildRunCount • Release channels: $releaseChannelCount",color=Color(0xFFAAB6C5),fontSize=11.sp)
                     }
                     if(error.isNotBlank()) Text(error,color=Color(0xFFFFB86B),fontSize=12.sp)
                 }
