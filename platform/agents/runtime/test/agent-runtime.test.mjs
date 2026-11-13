@@ -216,3 +216,52 @@ test("missing execution handler fails closed", async () => {
     (error) => error.code === "AGENT_NOT_AVAILABLE"
   );
 });
+
+test("atomic idempotency reservations prevent duplicate concurrent execution", async () => {
+  const h = createHarness();
+  const records = new Map();
+  h.runtime.idempotencyStore = {
+    async begin({ tenantId, idempotencyKey, fingerprint }) {
+      const key = `${tenantId}:${idempotencyKey}`;
+      const current = records.get(key);
+      if (!current) {
+        records.set(key, { fingerprint, state: "running" });
+        return { state: "acquired" };
+      }
+      if (current.fingerprint !== fingerprint) return { state: "conflict" };
+      if (current.state === "completed") return { state: "completed", response: current.response };
+      if (current.state === "failed") {
+        current.state = "running";
+        return { state: "acquired" };
+      }
+      return { state: "in_progress" };
+    },
+    async complete({ tenantId, idempotencyKey, fingerprint, response }) {
+      records.set(`${tenantId}:${idempotencyKey}`, { fingerprint, state: "completed", response });
+    },
+    async fail({ tenantId, idempotencyKey, fingerprint }) {
+      const current = records.get(`${tenantId}:${idempotencyKey}`);
+      if (current?.fingerprint === fingerprint) current.state = "failed";
+    }
+  };
+  let releaseHandler;
+  let notifyStarted;
+  const waitForRelease = new Promise((resolve) => { releaseHandler = resolve; });
+  const started = new Promise((resolve) => { notifyStarted = resolve; });
+  h.handlers.set("jrocai.demo:demo.read", async () => {
+    notifyStarted();
+    await waitForRelease;
+    return { count: 1 };
+  });
+
+  const first = h.runtime.execute({ request: h.request, principal: h.principal, host: "cloud" });
+  await started;
+  await assert.rejects(
+    h.runtime.execute({ request: h.request, principal: h.principal, host: "cloud" }),
+    (error) => error.code === "REQUEST_IN_PROGRESS"
+  );
+  releaseHandler();
+  const completed = await first;
+  const replay = await h.runtime.execute({ request: h.request, principal: h.principal, host: "cloud" });
+  assert.deepEqual(replay, completed);
+});
