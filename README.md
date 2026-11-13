@@ -12,7 +12,8 @@ First-party Android application codebase for the J-ROC AI phone experience.
 6. **Device Tools** — read-only Android hardware, build, and OS diagnostics.
 7. **J-ROC AI Account** — account registration and sign-in with an encrypted local session token.
 8. **J-ROC AI Settings** — local privacy, gateway-token removal, and history controls.
-9. **Ten-Wave Platform Hub** — live Environment Agent service-registry connection and the 100-batch roadmap.
+9. **Personal Memory** — user-controlled account notes with encrypted local session storage.
+10. **Ten-Wave Platform Hub** — live Environment Agent service-registry connection and the 100-batch roadmap.
 
 ## Security architecture: Env Agent
 
