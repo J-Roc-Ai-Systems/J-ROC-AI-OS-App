@@ -1,6 +1,6 @@
-"""Authorization helpers and safe audit redaction."""
+"""Gateway and per-worker authentication helpers plus safe audit redaction."""
 import re
-from fastapi import Header
+from fastapi import Header, HTTPException
 from .database import db
 from .models import utc_now
 
@@ -16,10 +16,19 @@ def redact(value: str) -> str:
     return cleaned[:4000]
 
 def require_platform_access(authorization: str | None = Header(default=None)) -> None:
-    """Reuse the Env Agent gateway boundary; never accept a client-supplied owner identity."""
     from app import require_gateway_token
     require_gateway_token(authorization)
 
+def require_worker_identity(
+    worker_id: str,
+    authorization: str | None = Header(default=None),
+) -> str:
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    from .workers import workers
+    if not workers.authenticate(worker_id, token):
+        raise HTTPException(status_code=401, detail="Worker authentication failed.")
+    return worker_id
+
 def audit(action: str, resource_type: str, resource_id: str, details: str = "") -> None:
     db.execute("INSERT INTO audit_events(actor,action,resource_type,resource_id,details,created_at) VALUES(?,?,?,?,?,?)",
-               ("gateway-service", action, resource_type, resource_id, redact(details), utc_now()))
+               ("platform-service", action, resource_type, resource_id, redact(details), utc_now()))
