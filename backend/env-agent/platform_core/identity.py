@@ -2,7 +2,7 @@
 import hashlib,hmac,secrets,uuid
 from datetime import datetime,timedelta,timezone
 import os
-from fastapi import APIRouter,Depends,Header,HTTPException
+from fastapi import APIRouter,Depends,Header,HTTPException,Request
 from pydantic import BaseModel,Field
 from .database import db
 from .models import utc_now
@@ -59,10 +59,34 @@ def register(payload:RegisterRequest):
  audit("identity.register","user",user_id)
  return _session(user)
 @router.post("/login")
-def login(payload:LoginRequest):
- user=db.one("SELECT * FROM platform_users WHERE email=? COLLATE NOCASE",(payload.email.strip(),))
- if not user or user["state"]!="active" or not _verify_password(payload.password,user["password_hash"]):
+def login(payload:LoginRequest,request:Request):
+ email=payload.email.strip().lower()
+ remote=request.client.host if request.client else "unknown"
+ ip_hash=hashlib.sha256(remote.encode()).hexdigest()
+ now=datetime.now(timezone.utc)
+ attempt=db.one("SELECT * FROM identity_login_attempts WHERE email=? AND ip_hash=?",(email,ip_hash))
+ if attempt and attempt["locked_until"] and attempt["locked_until"]>now.isoformat():
+  raise HTTPException(429,"Too many failed sign-in attempts. Try again later.")
+ user=db.one("SELECT * FROM platform_users WHERE email=? COLLATE NOCASE",(email,))
+ valid=bool(user and user["state"]=="active" and _verify_password(payload.password,user["password_hash"]))
+ if not valid:
+  window_start=now
+  count=1
+  if attempt:
+   try:
+    previous=datetime.fromisoformat(attempt["window_started_at"])
+    if now-previous<timedelta(minutes=15):
+     window_start=previous
+     count=attempt["failed_count"]+1
+   except ValueError:pass
+  locked=(now+timedelta(minutes=15)).isoformat() if count>=5 else None
+  db.execute("""INSERT INTO identity_login_attempts(email,ip_hash,failed_count,window_started_at,locked_until)
+   VALUES(?,?,?,?,?) ON CONFLICT(email,ip_hash) DO UPDATE SET failed_count=excluded.failed_count,
+   window_started_at=excluded.window_started_at,locked_until=excluded.locked_until""",
+   (email,ip_hash,count,window_start.isoformat(),locked))
+  audit("identity.login.failed","account",hashlib.sha256(email.encode()).hexdigest())
   raise HTTPException(401,"Email or password is incorrect.")
+ db.execute("DELETE FROM identity_login_attempts WHERE email=? AND ip_hash=?",(email,ip_hash))
  audit("identity.login","user",user["user_id"])
  return _session(user)
 @router.get("/me")
