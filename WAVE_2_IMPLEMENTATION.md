@@ -19,14 +19,14 @@ Base: `feature/phone-core-modules`
 | Batch | Current foundation |
 |---|---|
 | 11 Application Factory | Project registry and safe workspace preparation |
-| 12 Artificial Intelligence Brain | Platform service boundary and integration points; advanced reasoning and model orchestration remain outstanding |
+| 12 Artificial Intelligence Brain | Local-only planning control plane; live reasoning model adapters and model orchestration remain outstanding |
 | 13 Integration Engine | Integration registry and secret-reference enforcement |
 | 14 Production Worker System | Persistent worker registry and job queue |
 | 15 Device Management | Device inventory and explicit authorization state |
-| 16 Platform Integration | Shared authenticated platform API and SQLite service layer |
+| 16 Platform Integration | Shared authenticated platform API, service registry and persistent event bus |
 | 17 Communication Center | Persistent notification service |
 | 18 Knowledge Center | Local text index with source references |
-| 19 File Management | Database foundation exists; file browser, storage adapters and encrypted file operations remain outstanding |
+| 19 File Management | Safe local file inventory and metadata hashing; upload, encryption and storage adapters remain outstanding |
 | 20 Application Management | Application inventory; installation and update adapters remain outstanding |
 
 ## Security and operating constraints
@@ -35,7 +35,7 @@ Base: `feature/phone-core-modules`
 - Integration records accept only `env-agent://` secret references.
 - The platform API currently uses the existing shared gateway token and is therefore a single-gateway administrative boundary, not multi-user authentication. Do not expose it publicly until per-user identity, rate limiting, and tenant authorization are implemented.
 - No generated code or worker payload is automatically executed by the API.
-- Paid cloud model execution remains disabled by default; this platform core does not initiate provider spending.
+- Added a server-side zero-dollar spending gate: provider model calls require both an explicit enable flag and a positive monthly spending limit. Defaults remain disabled and zero dollars.
 - Device registration does not grant permission to perform device actions.
 - SQLite is the local-first development database. Production multi-user deployment requires a migration to a database with enforced tenant-level row policies.
 
@@ -52,8 +52,8 @@ Per the project instruction, comprehensive tests and Android builds are deferred
 - Connect the Android hub to the authenticated backend and add real loading, error, and empty states.
 - Replace shared gateway authentication with per-user identity and role-based authorization before public exposure.
 - Add bounded worker leases, stale-job recovery, cancellation, retry policy, and concurrency enforcement.
-- Add proper file metadata and storage adapter APIs.
-- Add model routing and spending-gate enforcement inside the Brain service.
+- Add file upload, encrypted storage adapters, quota enforcement and file permissions.
+- Add live model routing adapters inside the Brain service; the Env Agent spending gate now blocks paid provider calls by default.
 - Add integration approval workflows and provider-specific adapters.
 - Add Android device discovery and operating-system permission flows.
 - Add release installation and update adapters with explicit user approval.

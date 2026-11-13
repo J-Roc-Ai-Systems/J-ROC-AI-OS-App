@@ -26,7 +26,18 @@ def require_gateway_token(authorization: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid gateway access token.")
 
 
+def cloud_spending_enabled() -> bool:
+    allow_paid = os.getenv("JROCAI_ALLOW_PAID_CLOUD", "false").strip().lower() == "true"
+    try:
+        spending_limit = float(os.getenv("JROCAI_MONTHLY_SPENDING_LIMIT_USD", "0"))
+    except ValueError:
+        spending_limit = 0
+    return allow_paid and spending_limit > 0
+
+
 def provider_key() -> str:
+    if not cloud_spending_enabled():
+        raise HTTPException(status_code=403, detail="Cloud model execution is blocked by the zero-dollar spending gate.")
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
         raise HTTPException(status_code=503, detail="OpenAI provider key is not configured in the Env Agent.")
@@ -42,7 +53,7 @@ class ChatRequest(BaseModel):
 @app.get("/health")
 def health():
     # Deliberately disclose status only, never environment values.
-    return {"status": "ok", "service": "jrocai-env-agent", "provider_configured": bool(os.getenv("OPENAI_API_KEY"))}
+    return {"status": "ok", "service": "jrocai-env-agent", "provider_configured": bool(os.getenv("OPENAI_API_KEY")), "cloud_execution_enabled": cloud_spending_enabled()}
 
 
 @app.get("/v1/models")
