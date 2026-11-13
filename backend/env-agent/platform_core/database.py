@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS knowledge_documents (document_id TEXT PRIMARY KEY, ti
 CREATE INDEX IF NOT EXISTS idx_knowledge_title ON knowledge_documents(title);
 CREATE TABLE IF NOT EXISTS applications (application_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, version TEXT NOT NULL, platform TEXT NOT NULL, package_reference TEXT, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS audit_events (event_id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT NOT NULL, action TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id TEXT NOT NULL, details TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS platform_events (event_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, source TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_platform_events_created ON platform_events(created_at);
+CREATE TABLE IF NOT EXISTS platform_services (service_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, version TEXT NOT NULL, capabilities TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 """
 
 class PlatformDatabase:

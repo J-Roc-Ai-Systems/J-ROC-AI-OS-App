@@ -11,6 +11,9 @@ from .knowledge import knowledge
 from .communications import communications
 from .applications import applications
 from .database import db
+from .brain import brain, BrainPlanRequest
+from .events import events
+from .storage import storage
 
 router=APIRouter(prefix="/platform/v1",tags=["J-ROC AI Platform"],dependencies=[Depends(require_platform_access)])
 class JobFinish(BaseModel):
@@ -21,6 +24,15 @@ class KnowledgeInput(BaseModel):
     title: str = Field(min_length=1,max_length=240)
     source_reference: str = Field(min_length=1,max_length=500)
     content: str = Field(min_length=1,max_length=100000)
+class ServiceRegistration(BaseModel):
+    service_id: str = Field(min_length=2,max_length=80,pattern=r"^[a-zA-Z0-9._-]+$")
+    display_name: str = Field(min_length=2,max_length=120)
+    version: str = Field(min_length=1,max_length=40)
+    capabilities: list[str] = Field(default_factory=list,max_length=40)
+class EventInput(BaseModel):
+    event_type: str = Field(min_length=2,max_length=100)
+    source: str = Field(min_length=2,max_length=100)
+    payload: dict = Field(default_factory=dict)
 class NotificationInput(BaseModel):
     category: str = Field(min_length=1,max_length=60)
     title: str = Field(min_length=1,max_length=160)
@@ -114,3 +126,29 @@ def list_applications(): return applications.list()
 @router.get("/audit")
 def list_audit(limit:int=Query(default=100,ge=1,le=500)):
     return db.many("SELECT event_id,actor,action,resource_type,resource_id,details,created_at FROM audit_events ORDER BY event_id DESC LIMIT ?",(limit,))
+
+
+@router.get("/brain/status")
+def brain_status(): return brain.status()
+@router.post("/brain/plan")
+def create_brain_plan(item:BrainPlanRequest): return brain.plan(item)
+
+@router.post("/services")
+def register_service(item:ServiceRegistration): return events.register_service(item.service_id,item.display_name,item.version,item.capabilities)
+@router.get("/services")
+def list_services(): return events.services()
+@router.post("/events")
+def publish_event(item:EventInput): return events.publish(item.event_type,item.source,item.payload)
+@router.get("/events")
+def list_events(limit:int=Query(default=100,ge=1,le=500)): return events.list(limit)
+
+@router.get("/files")
+def list_files(directory:str="",limit:int=Query(default=200,ge=1,le=500)):
+    try: return storage.list(directory,limit)
+    except ValueError as exc: raise HTTPException(400,str(exc))
+@router.get("/files/metadata")
+def file_metadata(path:str=Query(min_length=1,max_length=1000)):
+    try: result=storage.metadata(path)
+    except ValueError as exc: raise HTTPException(400,str(exc))
+    if not result: raise HTTPException(404,"File not found")
+    return result

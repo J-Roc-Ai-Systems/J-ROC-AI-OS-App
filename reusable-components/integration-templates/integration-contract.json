@@ -1,0 +1,9 @@
+{
+  "template_name": "J-ROC AI Integration Contract",
+  "template_version": "1.0.0",
+  "required_fields": ["integration_id", "display_name", "integration_type", "provider", "capabilities"],
+  "secret_reference_scheme": "env-agent://",
+  "initial_state": "pending_approval",
+  "credential_values_allowed": false,
+  "approval_required_before_activation": true
+}
