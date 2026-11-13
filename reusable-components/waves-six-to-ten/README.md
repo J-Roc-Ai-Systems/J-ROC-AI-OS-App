@@ -3,7 +3,7 @@
 This folder documents shared components intended for reuse across the J-ROC AI phone application, desktop and web clients, platform agents, and backend services.
 
 ## Components
-- Agent job contract: ../.. /backend/env-agent/platform_core/wave610.py
+- Agent job contract: ../../backend/env-agent/platform_core/wave610.py
 - Worker execution contract: backend/env-agent/platform_core/workers.py
 - Platform agent registry: backend/env-agent/platform_core/wave610.py
 - Shared Android API client: app/src/main/java/online/jrocai/phone/data/WaveSixTenPlatformClient.kt
