@@ -198,6 +198,15 @@ test("idempotency replays the first result and rejects a changed payload", async
   const replay = await h.runtime.execute({ request: h.request, principal: h.principal, host: "cloud" });
   assert.deepEqual(replay, first);
   assert.equal(calls, 1);
+
+  const savedGrants = h.principal.grantedCapabilities;
+  h.principal.grantedCapabilities = [];
+  await assert.rejects(
+    h.runtime.execute({ request: h.request, principal: h.principal, host: "cloud" }),
+    (error) => error.code === "PERMISSION_DENIED"
+  );
+  h.principal.grantedCapabilities = savedGrants;
+
   await assert.rejects(
     h.runtime.execute({
       request: { ...h.request, input: { changed: true } },
