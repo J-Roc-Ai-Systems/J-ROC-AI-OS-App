@@ -64,6 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_agent_versions_state ON agent_versions(agent_id,s
 ("0006_identity_login_rate_limits", """
 CREATE TABLE IF NOT EXISTS identity_login_attempts(email TEXT NOT NULL,ip_hash TEXT NOT NULL,failed_count INTEGER NOT NULL,window_started_at TEXT NOT NULL,locked_until TEXT,PRIMARY KEY(email,ip_hash));
 CREATE INDEX IF NOT EXISTS idx_identity_login_lock ON identity_login_attempts(locked_until);
+"""),
+("0007_user_memory_controls", """
+CREATE TABLE IF NOT EXISTS user_memory_items(memory_id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES platform_users(user_id) ON DELETE CASCADE,category TEXT NOT NULL,title TEXT NOT NULL,content TEXT NOT NULL,source TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_user_memory_owner ON user_memory_items(user_id,category,updated_at);
 """)]
 class PlatformDatabase:
  def __init__(self,path=None): self.path=Path(path) if path else _DEFAULT_PATH; self._connection=None
