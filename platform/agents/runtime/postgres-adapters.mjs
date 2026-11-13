@@ -18,6 +18,41 @@ function redact(value) {
   return output;
 }
 
+export class PostgresAgentDefinitionStore {
+  constructor(database) { this.database = requireDatabase(database); }
+
+  async listRegistered() {
+    const result = await this.database.query(
+      `select distinct on (agent_id) manifest
+         from public.platform_agent_definitions
+        where lifecycle_state in ('registered','available','degraded','disabled')
+        order by agent_id, updated_at desc`
+    );
+    return (result.rows ?? []).map((row) => row.manifest);
+  }
+
+  async register(manifest) {
+    if (!manifest?.agentId || !manifest?.version || !manifest?.lifecycleState) {
+      throw new TypeError("A complete platform agent manifest is required.");
+    }
+    if (manifest.lifecycleState === "available" &&
+        (manifest.health?.status !== "passed" || manifest.tests?.status !== "passed")) {
+      throw new Error("An agent cannot be persisted as available before tests and readiness pass.");
+    }
+    const result = await this.database.query(
+      `insert into public.platform_agent_definitions (agent_id, agent_version, lifecycle_state, manifest)
+       values ($1,$2,$3,$4::jsonb)
+       on conflict (agent_id, agent_version) do update
+         set lifecycle_state = excluded.lifecycle_state,
+             manifest = excluded.manifest,
+             updated_at = clock_timestamp()
+       returning agent_id, agent_version, lifecycle_state`,
+      [manifest.agentId, manifest.version, manifest.lifecycleState, JSON.stringify(redact(manifest))]
+    );
+    return result.rows?.[0] ?? null;
+  }
+}
+
 export class PostgresAuditStore {
   constructor(database) { this.database = requireDatabase(database); }
 
@@ -144,6 +179,7 @@ export class PostgresTaskQueue {
 
 export function createPostgresAgentStores(database) {
   return Object.freeze({
+    definitionStore: new PostgresAgentDefinitionStore(database),
     auditStore: new PostgresAuditStore(database),
     approvalStore: new PostgresApprovalStore(database),
     idempotencyStore: new PostgresIdempotencyStore(database),
