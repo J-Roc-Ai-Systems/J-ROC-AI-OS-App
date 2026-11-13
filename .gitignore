@@ -12,3 +12,10 @@ local.properties
 .env.*
 !.env.example
 secrets.properties
+
+# Local platform data and generated workspaces
+backend/env-agent/data/
+backend/env-agent/workspace/
+*.sqlite
+*.sqlite3
+*.db

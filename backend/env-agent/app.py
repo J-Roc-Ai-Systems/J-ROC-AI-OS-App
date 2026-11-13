@@ -14,6 +14,26 @@ app = FastAPI(title="J-ROC AI Env Agent", version="0.2.0")
 
 from platform_core.api import router as platform_router
 app.include_router(platform_router)
+
+
+@app.on_event("startup")
+def register_wave_two_services():
+    from platform_core.events import events
+    services = [
+        ("application-factory", "Application Factory", ["project-registration", "workspace-preparation"]),
+        ("artificial-intelligence-brain", "Artificial Intelligence Brain", ["local-planning", "spending-policy"]),
+        ("integration-registry", "Integration Registry", ["connection-registration", "secret-references"]),
+        ("production-workers", "Production Worker System", ["worker-registry", "durable-jobs"]),
+        ("device-inventory", "Device Management", ["device-registration", "authorization-state"]),
+        ("platform-events", "Platform Integration", ["service-registry", "event-bus"]),
+        ("communication-center", "Communication Center", ["notifications", "read-state"]),
+        ("knowledge-center", "Knowledge Center", ["document-index", "source-search"]),
+        ("file-storage", "File Management", ["safe-file-inventory", "metadata-hashing"]),
+        ("application-inventory", "Application Management", ["application-registry"])
+    ]
+    for service_id, display_name, capabilities in services:
+        events.register_service(service_id, display_name, "0.2.0", capabilities)
+
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
