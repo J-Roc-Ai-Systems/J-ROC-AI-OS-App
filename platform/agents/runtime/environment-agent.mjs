@@ -2,6 +2,19 @@ import { AgentRuntimeError } from "./errors.mjs";
 
 const SECRET_REFERENCE = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/;
 
+function containsCredentialMaterial(value, secrets) {
+  if (typeof value === "string") {
+    return secrets.some((secret) => secret.length >= 8 && value.includes(secret));
+  }
+  if (Array.isArray(value)) return value.some((item) => containsCredentialMaterial(item, secrets));
+  if (!value || typeof value !== "object") return false;
+  if (Buffer.isBuffer(value)) {
+    const encoded = value.toString("utf8");
+    return secrets.some((secret) => secret.length >= 8 && encoded.includes(secret));
+  }
+  return Object.values(value).some((item) => containsCredentialMaterial(item, secrets));
+}
+
 /**
  * The Environment Agent never returns secret values to agent callers.
  * Secrets are made available only inside an injected adapter callback.
@@ -67,8 +80,21 @@ export class EnvironmentAgent {
         references: metadata.map(({ reference, expiresAt, scope }) => ({ reference, expiresAt, scope }))
       });
 
-      // Values are passed only to the trusted adapter callback and never returned.
-      return await operation(Object.freeze({ ...credentials }));
+      // Values are passed only to the trusted adapter callback. A response
+      // containing a raw credential is rejected before it can escape.
+      const result = await operation(Object.freeze({ ...credentials }));
+      if (containsCredentialMaterial(result, Object.values(credentials))) {
+        await this.auditStore.append({
+          event: "environment.secret_access.output_blocked",
+          tenantId,
+          principalId: principal.principalId,
+          purpose,
+          taskId: taskId ?? null,
+          references
+        });
+        throw new AgentRuntimeError("SECRET_EXPOSURE_BLOCKED", "The adapter result contained secret material and was blocked.", 500);
+      }
+      return result;
     } finally {
       for (const reference of Object.keys(credentials)) credentials[reference] = "";
     }
