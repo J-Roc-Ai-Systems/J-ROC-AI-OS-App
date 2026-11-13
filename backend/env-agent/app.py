@@ -21,6 +21,8 @@ app.include_router(waves_six_to_ten_router)
 
 @app.on_event("startup")
 def register_wave_two_services():
+    from platform_core.wave610 import ensure_default_agents
+    ensure_default_agents()
     from platform_core.events import events
     services = [
         ("application-factory", "Application Factory", ["project-registration", "workspace-preparation"]),
