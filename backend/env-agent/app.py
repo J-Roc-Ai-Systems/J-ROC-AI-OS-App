@@ -22,6 +22,7 @@ from platform_core.secure_storage import router as secure_storage_router
 from platform_core.enterprise import router as enterprise_router
 from platform_core.release_management import router as release_router
 from platform_core.agent_factory import router as agent_factory_router
+from platform_core.memory import router as memory_router
 
 app.include_router(platform_router)
 app.include_router(worker_router)
@@ -35,6 +36,7 @@ app.include_router(secure_storage_router)
 app.include_router(enterprise_router)
 app.include_router(release_router)
 app.include_router(agent_factory_router)
+app.include_router(memory_router)
 
 
 @app.on_event("startup")
@@ -62,7 +64,8 @@ def register_wave_two_services():
         ("enterprise-operations", "Enterprise Operations", ["organizations", "fleet-enrollment", "device-policies"]),
         ("release-channels", "Release Channels", ["release-registry", "approval-and-publish-state"]),
         ("agent-factory", "Agent Factory", ["versioned-definitions", "permission-allowlists"]),
-        ("worker-heartbeats", "Worker Heartbeat Service", ["worker-health", "lease-renewal"])
+        ("worker-heartbeats", "Worker Heartbeat Service", ["worker-health", "lease-renewal"]),
+        ("personal-memory", "Personal Memory", ["user-controlled-notes", "account-scoped-storage"])
     ]
     for service_id, display_name, capabilities in services:
         events.register_service(service_id, display_name, "0.2.0", capabilities)
