@@ -22,6 +22,18 @@ class AgentStoreTests(unittest.TestCase):
         updated=self.store.approve(task["task_id"],True,"chairman")
         self.assertEqual(updated["status"],"queued")
         self.assertEqual(updated["approved_by"],"chairman")
+
+    def test_task_survives_store_reopen(self):
+        task=self.store.create_task({"agent_id":"source-agent","task_type":"repository.inspect","repository":"owner/repo","description":"persist this task"})
+        reopened=AgentStore(self.store.database_path)
+        self.assertEqual(reopened.get_task(task["task_id"])["description"],"persist this task")
+
+    def test_rejecting_approval_is_recorded(self):
+        task=self.store.create_task({"agent_id":"source-agent","task_type":"release.publish","repository":"owner/repo","description":"publish release"})
+        updated=self.store.approve(task["task_id"],False,"chairman")
+        self.assertEqual(updated["status"],"rejected")
+        self.assertEqual(updated["approved_by"],"chairman")
+
     def test_unknown_agent_is_rejected(self):
         with self.assertRaises(ValueError):
             self.store.create_task({"agent_id":"unknown","task_type":"repository.inspect","repository":"org/repo","description":"inspect"})
