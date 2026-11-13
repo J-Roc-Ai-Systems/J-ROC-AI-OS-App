@@ -48,6 +48,7 @@ import online.jrocai.phone.data.ConversationStore
 import online.jrocai.phone.data.EnvGatewayClient
 import online.jrocai.phone.data.SecureSettings
 import online.jrocai.phone.data.PlatformOperationsClient
+import online.jrocai.phone.data.IdentityClient
 import java.text.DateFormat
 import java.util.Date
 
@@ -58,7 +59,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Model Center",
-    "Conversations", "Device Tools", "Settings", "Wave 2"
+    "Conversations", "Device Tools", "Account", "Settings", "Wave 2"
 )
 
 class MainActivity : ComponentActivity() {
@@ -143,6 +144,7 @@ private fun JrocPhoneApp(
                 })
                 "Device Tools" -> DeviceTools()
                 "Wave 2" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
+                "Account" -> AccountScreen(settings = secureSettings, client = IdentityClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
                     messages.clear()
@@ -175,6 +177,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Model Center", "Connect the Env Agent and select an available model.", "Manage Models") { onOpen("Model Center") }
         ModuleCard("Conversations", "Browse and clear locally saved chat history.", "View History") { onOpen("Conversations") }
         ModuleCard("Device Tools", "Review Android version, hardware and build details.", "Inspect Device") { onOpen("Device Tools") }
+        ModuleCard("Account", "Register or sign in using a protected account session.", "Open Account") { onOpen("Account") }
         ModuleCard("J-ROC AI Settings", "Manage privacy, local credentials and preferences.", "Open Settings") { onOpen("Settings") }
         ModuleCard("Wave 2 Production Platform", "Open the ten intelligence and production infrastructure areas.", "Open Wave 2") { onOpen("Wave 2") }
         Text("J-ROC AI • Local-first phone workspace", color = Muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
