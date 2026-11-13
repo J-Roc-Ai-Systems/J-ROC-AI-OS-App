@@ -125,7 +125,12 @@ class WorkerService:
             if not job:
                 connection.execute("ROLLBACK"); return None
             state = "failed" if error else "completed"
+            job_payload = db.decode(job["payload"], {})
             connection.execute("UPDATE jobs SET state=?,result=?,error=?,lease_expires_at=NULL,updated_at=? WHERE job_id=?", (state,db.encode(result),None if not error else "[REDACTED]",utc_now(),job_id))
+            if job["job_type"] == "build.execute" and job_payload.get("build_run_id"):
+                reported_state = "failed" if error else "worker_reported_completed"
+                connection.execute("UPDATE build_runs SET state=?,result=?,updated_at=? WHERE run_id=?",
+                    (reported_state,db.encode(result),utc_now(),job_payload["build_run_id"]))
             remaining = connection.execute("SELECT COUNT(*) FROM jobs WHERE assigned_worker=? AND state='running'", (worker_id,)).fetchone()[0]
             connection.execute("UPDATE workers SET state=?,updated_at=? WHERE worker_id=?", ("running" if remaining else "idle",utc_now(),worker_id))
             connection.execute("COMMIT")
