@@ -23,10 +23,13 @@ export class PostgresAgentDefinitionStore {
 
   async listRegistered() {
     const result = await this.database.query(
-      `select distinct on (agent_id) manifest
-         from public.platform_agent_definitions
-        where lifecycle_state in ('registered','available','degraded','disabled')
-        order by agent_id, updated_at desc`
+      `select manifest
+         from (
+           select distinct on (agent_id) manifest, lifecycle_state
+             from public.platform_agent_definitions
+            order by agent_id, updated_at desc
+         ) latest
+        where lifecycle_state in ('registered','available','degraded','disabled')`
     );
     return (result.rows ?? []).map((row) => row.manifest);
   }
@@ -85,6 +88,49 @@ export class PostgresAuditStore {
 
 export class PostgresApprovalStore {
   constructor(database) { this.database = requireDatabase(database); }
+
+  async request(input) {
+    const result = await this.database.query(
+      `insert into public.platform_agent_approvals
+       (tenant_id, request_id, agent_id, capability, principal_id, status, reason, expires_at)
+       values ($1,$2,$3,$4,$5,'pending',$6,$7)
+       returning approval_id`,
+      [input.tenantId, input.requestId, input.agentId, input.capability,
+       input.principalId, input.reason ?? null, input.expiresAt]
+    );
+    const approvalId = result.rows?.[0]?.approval_id;
+    if (!approvalId) throw new Error("Approval request did not return an identifier.");
+    return approvalId;
+  }
+
+  /**
+   * The calling gateway must verify that approvedBy is an authorized human
+   * approver before this database mutation is allowed.
+   */
+  async approve({ approvalId, approvedBy, reason }) {
+    if (!approvalId || !approvedBy) throw new TypeError("Approval identifier and verified human approver are required.");
+    const result = await this.database.query(
+      `update public.platform_agent_approvals
+          set status = 'approved', approved_by = $2, reason = $3
+        where approval_id = $1 and status = 'pending'
+          and expires_at > clock_timestamp()
+        returning approval_id`,
+      [approvalId, approvedBy, reason ?? null]
+    );
+    return Boolean(result.rows?.[0]?.approval_id);
+  }
+
+  async reject({ approvalId, rejectedBy, reason }) {
+    if (!approvalId || !rejectedBy) throw new TypeError("Approval identifier and verified human reviewer are required.");
+    const result = await this.database.query(
+      `update public.platform_agent_approvals
+          set status = 'rejected', approved_by = $2, reason = $3
+        where approval_id = $1 and status = 'pending'
+        returning approval_id`,
+      [approvalId, rejectedBy, reason ?? null]
+    );
+    return Boolean(result.rows?.[0]?.approval_id);
+  }
 
   async consume(input) {
     const result = await this.database.query(
