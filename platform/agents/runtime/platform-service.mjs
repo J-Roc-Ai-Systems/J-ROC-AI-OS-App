@@ -33,7 +33,7 @@ export async function createPlatformAgentService({
     JSON.parse(await readFile(path, "utf8"))
   ));
   const stores = createPostgresAgentStores(database);
-  const persistedManifests = await stores.definitionStore.listRegistered();
+  const persistedManifests = await stores.definitionStore.listLatest();
   const registry = new AgentRegistry({
     catalog,
     manifests: [...fileManifests, ...persistedManifests]
