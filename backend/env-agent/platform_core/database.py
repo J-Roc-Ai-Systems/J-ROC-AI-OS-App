@@ -40,6 +40,21 @@ CREATE INDEX IF NOT EXISTS idx_workflow_runs_state ON workflow_runs(state,starte
 CREATE TABLE IF NOT EXISTS repair_profiles(profile_id TEXT PRIMARY KEY,manufacturer TEXT NOT NULL,model TEXT NOT NULL,operating_system TEXT NOT NULL,supported_methods TEXT NOT NULL,safety_notes TEXT NOT NULL,source_reference TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS diagnostic_sessions(session_id TEXT PRIMARY KEY,device_id TEXT,profile_id TEXT,issue_summary TEXT NOT NULL,connection_method TEXT NOT NULL,state TEXT NOT NULL,findings TEXT NOT NULL,next_actions TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_diagnostic_sessions_state ON diagnostic_sessions(state,updated_at);
+"""),
+("0004_factory_storage_enterprise_releases", """
+CREATE TABLE IF NOT EXISTS build_recipes(recipe_id TEXT PRIMARY KEY,name TEXT NOT NULL,platform TEXT NOT NULL,build_command TEXT NOT NULL,working_directory TEXT NOT NULL,required_capability TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS build_runs(run_id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(project_id),recipe_id TEXT NOT NULL REFERENCES build_recipes(recipe_id),source_revision TEXT NOT NULL,parameters TEXT NOT NULL,state TEXT NOT NULL,job_id TEXT,result TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_build_runs_state ON build_runs(state,created_at);
+CREATE TABLE IF NOT EXISTS encrypted_files(file_id TEXT PRIMARY KEY,owner_id TEXT NOT NULL REFERENCES platform_users(user_id) ON DELETE CASCADE,name TEXT NOT NULL,content_type TEXT NOT NULL,encrypted_path TEXT NOT NULL,nonce TEXT NOT NULL,cipher_hash TEXT NOT NULL,plain_size INTEGER NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_encrypted_files_owner ON encrypted_files(owner_id,created_at);
+CREATE TABLE IF NOT EXISTS organizations(organization_id TEXT PRIMARY KEY,name TEXT NOT NULL,plan TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS organization_members(organization_id TEXT NOT NULL REFERENCES organizations(organization_id) ON DELETE CASCADE,user_id TEXT NOT NULL REFERENCES platform_users(user_id) ON DELETE CASCADE,role TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(organization_id,user_id));
+CREATE TABLE IF NOT EXISTS fleet_enrollments(enrollment_id TEXT PRIMARY KEY,organization_id TEXT NOT NULL REFERENCES organizations(organization_id) ON DELETE CASCADE,device_id TEXT NOT NULL,display_name TEXT NOT NULL,platform TEXT NOT NULL,manufacturer TEXT NOT NULL,model TEXT NOT NULL,state TEXT NOT NULL,enrolled_at TEXT NOT NULL,updated_at TEXT NOT NULL,UNIQUE(organization_id,device_id));
+CREATE TABLE IF NOT EXISTS device_policies(policy_id TEXT PRIMARY KEY,name TEXT NOT NULL,rules TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS release_channels(channel_id TEXT PRIMARY KEY,name TEXT NOT NULL,stability TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS releases(release_id TEXT PRIMARY KEY,application_id TEXT NOT NULL REFERENCES applications(application_id),version TEXT NOT NULL,channel_id TEXT NOT NULL REFERENCES release_channels(channel_id),artifact_reference TEXT NOT NULL,source_revision TEXT NOT NULL,notes TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_releases_channel ON releases(channel_id,state,created_at);
+CREATE TABLE IF NOT EXISTS release_approvals(approval_id TEXT PRIMARY KEY,release_id TEXT NOT NULL REFERENCES releases(release_id) ON DELETE CASCADE,decision TEXT NOT NULL,reviewer TEXT NOT NULL,created_at TEXT NOT NULL);
 """)]
 class PlatformDatabase:
  def __init__(self,path=None): self.path=Path(path) if path else _DEFAULT_PATH; self._connection=None
