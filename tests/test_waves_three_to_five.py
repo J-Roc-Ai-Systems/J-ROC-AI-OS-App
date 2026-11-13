@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"backend"/"env-agent"))
 import platform_core.wave345 as module
 import platform_core.domain_records as domains
+import platform_core.security as security
 from platform_core.database import PlatformDatabase
 from platform_core.wave345 import WorkflowCreate, WorkflowDecision, PolicyCheck
 
@@ -16,12 +17,15 @@ class WaveThreeFiveTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory()
         self.old_db=module.db
         self.old_domain_db=domains.db
+        self.old_security_db=security.db
         module.db=PlatformDatabase(Path(self.temp.name)/"test.sqlite3")
         domains.db=module.db
+        security.db=module.db
         module.db.connect()
     def tearDown(self):
         module.db=self.old_db
         domains.db=self.old_domain_db
+        security.db=self.old_security_db
         self.temp.cleanup()
     def test_catalogue_has_thirty_batches(self):
         self.assertEqual(30,sum(len(w["batches"]) for w in module.WAVES))

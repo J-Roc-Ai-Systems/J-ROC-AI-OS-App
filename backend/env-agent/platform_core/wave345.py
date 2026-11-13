@@ -4,13 +4,13 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from .database import db
 from .models import utc_now
-from .security import audit
+from .security import audit, require_platform_access
 
-router = APIRouter(prefix="/platform/v1", tags=["J-ROC AI Waves Three to Five"])
+router = APIRouter(prefix="/platform/v1", tags=["J-ROC AI Waves Three to Five"], dependencies=[Depends(require_platform_access)])
 
 WAVES = [
  {"wave":3,"name":"Governance and orchestration","batches":[

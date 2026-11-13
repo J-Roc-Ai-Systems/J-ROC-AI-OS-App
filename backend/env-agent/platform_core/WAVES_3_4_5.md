@@ -51,15 +51,3 @@ These waves extend the shared platform services. They are not Android-only modul
 ## Explicitly not claimed
 
 The catalogue is not evidence that every domain adapter is complete. Payment capture, autonomous execution, firmware flashing, silent device control, public multi-tenant identity and paid cloud calls are not enabled by these foundations. Those require separate approved implementations and validation.
-
-## Wave Four and Five shared domain record APIs
-
-The domain record service now provides persistent create/list/read/state-transition endpoints for all twenty domains in Batches 31–50. The service enforces bounded record sizes, supported lifecycle states, source references, and credential-field removal before persistence. This is a reusable data foundation, not a substitute for each domain's specialized business rules, tenant authorization, or external adapters.
-
-- `GET /platform/v1/domain/catalog`
-- `POST /platform/v1/domain/{domain}/records`
-- `GET /platform/v1/domain/{domain}/records`
-- `GET /platform/v1/domain/{domain}/records/{record_id}`
-- `PATCH /platform/v1/domain/{domain}/records/{record_id}/state`
-
-Supported domains are the twenty names returned by the catalog endpoint. Terminal records cannot be reopened through the generic state endpoint. Credential-like fields are removed recursively from stored record data.

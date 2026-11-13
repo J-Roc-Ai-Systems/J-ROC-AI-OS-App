@@ -9,8 +9,7 @@
 - `backend/env-agent/platform_core/wave345.py`: shared service catalogue, durable workflow governance, policy decisions and governance summary.
 - `backend/env-agent/app.py`: mounts the Wave Three–Five API router.
 - `backend/env-agent/platform_core/WAVES_3_4_5.md`: detailed scope and delivery boundaries.
-- `backend/env-agent/platform_core/domain_records.py`: persistent domain record APIs for all twenty Wave Four and Wave Five domains, with lifecycle validation and credential-field filtering.
-- `tests/test_waves_three_to_five.py`: regression coverage for catalogue integrity, approval flow, policy gates and domain records.
+- `tests/test_waves_three_to_five.py`: regression coverage for catalogue integrity, approval flow and policy gates.
 
 ## API routes
 
@@ -25,14 +24,6 @@
 - `GET /platform/v1/governance/overview`
 
 All routes inherit the platform gateway authentication dependency. Workflow approvals only change persisted workflow state; they do not trigger execution.
-
-## Additional routes
-
-- `GET /platform/v1/domain/catalog`
-- `POST /platform/v1/domain/{domain}/records`
-- `GET /platform/v1/domain/{domain}/records`
-- `GET /platform/v1/domain/{domain}/records/{record_id}`
-- `PATCH /platform/v1/domain/{domain}/records/{record_id}/state`
 
 ## Validation
 

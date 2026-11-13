@@ -2,13 +2,13 @@
 import json
 import uuid
 from typing import Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from .database import db
 from .models import utc_now
-from .security import audit
+from .security import audit, require_platform_access
 
-router=APIRouter(prefix="/platform/v1/domain",tags=["J-ROC AI Domain Services"])
+router=APIRouter(prefix="/platform/v1/domain",tags=["J-ROC AI Domain Services"],dependencies=[Depends(require_platform_access)])
 
 DOMAINS={
  "repair_intelligence":31,"device_sessions":32,"diagnostics":33,"repair_workflows":34,
