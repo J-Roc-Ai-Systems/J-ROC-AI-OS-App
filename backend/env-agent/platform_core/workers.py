@@ -51,6 +51,36 @@ class WorkerService:
         audit("worker.state", "worker", worker_id, state)
         return self.get(worker_id)
 
+    def heartbeat(self, worker_id: str):
+        worker = self.get(worker_id)
+        if not worker or worker["state"] in {"paused","disabled"}:
+            return None
+        db.execute("UPDATE workers SET updated_at=? WHERE worker_id=?", (utc_now(),worker_id))
+        audit("worker.heartbeat","worker",worker_id)
+        return {"worker_id":worker_id,"state":worker["state"],"received_at":utc_now()}
+
+    def renew_lease(self, job_id: str, worker_id: str):
+        now = datetime.now(timezone.utc)
+        connection = db.connect()
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            job = connection.execute("SELECT state,lease_expires_at FROM jobs WHERE job_id=? AND assigned_worker=?", (job_id,worker_id)).fetchone()
+            if not job or job["state"] != "running":
+                connection.execute("ROLLBACK")
+                return None
+            if job["lease_expires_at"] and job["lease_expires_at"] < now.isoformat():
+                connection.execute("ROLLBACK")
+                return None
+            expires = (now + timedelta(seconds=LEASE_SECONDS)).isoformat()
+            connection.execute("UPDATE jobs SET lease_expires_at=?,updated_at=? WHERE job_id=?", (expires,now.isoformat(),job_id))
+            connection.execute("UPDATE workers SET updated_at=? WHERE worker_id=?", (now.isoformat(),worker_id))
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
+        audit("job.lease.renew","job",job_id,worker_id)
+        return {"job_id":job_id,"worker_id":worker_id,"lease_expires_at":expires}
+
     def submit(self, item: JobSubmission):
         job_id = str(uuid.uuid4()); now = utc_now()
         db.execute("INSERT INTO jobs(job_id,job_type,payload,priority,required_capability,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
