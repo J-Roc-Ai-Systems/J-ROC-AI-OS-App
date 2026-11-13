@@ -1,0 +1,1042 @@
+{
+  "schema_version": "1.0.0",
+  "platform": "J-ROC AI",
+  "service_id": "jrocai.platform.agent-registry",
+  "service_name": "J-ROC AI Platform Agent Service",
+  "version": "1.0.0",
+  "status": "architecture_and_registry",
+  "scope": "Platform-wide; independent of Android, web, desktop, and backend clients.",
+  "governance": {
+    "owner": "Chairman",
+    "secret_authority": "jrocai.environment",
+    "default_access": "least_privilege",
+    "require_audit": true,
+    "require_human_approval_for": [
+      "production_deployments",
+      "repository_merge",
+      "dependency_import",
+      "data_deletion",
+      "permission_changes",
+      "external_publication",
+      "financial_actions",
+      "device_firmware_changes",
+      "security_policy_changes"
+    ],
+    "deny_by_default": true,
+    "untrusted_code_execution": false,
+    "agent_to_agent_calls": "capability_checked_and_audited"
+  },
+  "shared_services": [
+    "agent_registry",
+    "agent_dispatcher",
+    "policy_engine",
+    "identity_and_access_control",
+    "environment_and_secret_broker",
+    "audit_event_store",
+    "task_queue",
+    "workflow_engine",
+    "artifact_and_source_catalog",
+    "health_and_telemetry",
+    "approval_gateway"
+  ],
+  "agents": [
+    {
+      "agent_id": "jrocai.chairman",
+      "display_name": "Chairman Command Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Executive coordination, priorities, approvals, and cross-project status.",
+      "capabilities": [
+        "read_project_status",
+        "coordinate_agents",
+        "request_approval"
+      ],
+      "depends_on": [],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "read_project_status",
+          "coordinate_agents",
+          "request_approval"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.orchestrator",
+      "display_name": "Platform Orchestrator Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Routes work to specialized agents, manages dependencies, retries, and task state.",
+      "capabilities": [
+        "dispatch_tasks",
+        "coordinate_workflows"
+      ],
+      "depends_on": [
+        "chairman"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "dispatch_tasks",
+          "coordinate_workflows"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.source",
+      "display_name": "Source Agent",
+      "version": "1.0.0",
+      "status": "foundation",
+      "scope": "platform_wide",
+      "mission": "Discovers, retrieves, verifies provenance, compatibility, checksums, and licenses for authorized sources.",
+      "capabilities": [
+        "discover_sources",
+        "validate_provenance",
+        "catalog_sources"
+      ],
+      "depends_on": [
+        "environment"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "discover_sources",
+          "validate_provenance",
+          "catalog_sources"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.environment",
+      "display_name": "Environment Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Sole broker for secrets, environment configuration, signing material, and runtime credentials.",
+      "capabilities": [
+        "issue_scoped_runtime_credentials",
+        "manage_environment_configuration"
+      ],
+      "depends_on": [],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "issue_scoped_runtime_credentials",
+          "manage_environment_configuration"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.architecture",
+      "display_name": "Systems Architecture Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Maintains platform architecture, service boundaries, interfaces, and technical decisions.",
+      "capabilities": [
+        "review_architecture",
+        "publish_architecture_decisions"
+      ],
+      "depends_on": [
+        "source"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "review_architecture",
+          "publish_architecture_decisions"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.engineering",
+      "display_name": "Software Engineering Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Implements approved application and service changes using repository conventions.",
+      "capabilities": [
+        "write_approved_code",
+        "refactor_scoped_modules"
+      ],
+      "depends_on": [
+        "source",
+        "architecture"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "write_approved_code",
+          "refactor_scoped_modules"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.android",
+      "display_name": "Android Engineering Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Builds and maintains native Android applications and device integrations.",
+      "capabilities": [
+        "android_code",
+        "android_build"
+      ],
+      "depends_on": [
+        "engineering",
+        "environment"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "android_code",
+          "android_build"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.web",
+      "display_name": "Web Engineering Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Builds accessible web applications, portals, and frontend systems.",
+      "capabilities": [
+        "web_code",
+        "web_build"
+      ],
+      "depends_on": [
+        "engineering",
+        "architecture"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "web_code",
+          "web_build"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.backend",
+      "display_name": "Backend Engineering Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Implements APIs, services, background jobs, and server-side business logic.",
+      "capabilities": [
+        "api_code",
+        "service_code"
+      ],
+      "depends_on": [
+        "engineering",
+        "environment"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "api_code",
+          "service_code"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.database",
+      "display_name": "Database Engineering Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Designs schemas, migrations, indexes, backups, and data access controls.",
+      "capabilities": [
+        "schema_design",
+        "migration_authoring"
+      ],
+      "depends_on": [
+        "architecture",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "schema_design",
+          "migration_authoring"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.quality",
+      "display_name": "Quality Assurance Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Creates and runs automated tests, regression suites, and acceptance checks.",
+      "capabilities": [
+        "run_tests",
+        "report_quality"
+      ],
+      "depends_on": [
+        "engineering"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "run_tests",
+          "report_quality"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.review",
+      "display_name": "Code Review Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Reviews diffs for correctness, maintainability, security, and policy compliance.",
+      "capabilities": [
+        "review_changes",
+        "block_policy_violations"
+      ],
+      "depends_on": [
+        "quality",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "review_changes",
+          "block_policy_violations"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.security",
+      "display_name": "Cybersecurity Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Threat models systems, scans approved code, reviews vulnerabilities, and recommends remediation.",
+      "capabilities": [
+        "security_assessment",
+        "vulnerability_triage"
+      ],
+      "depends_on": [
+        "source"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "security_assessment",
+          "vulnerability_triage"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.privacy",
+      "display_name": "Privacy and Data Governance Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Enforces data minimization, retention, consent, and privacy boundaries.",
+      "capabilities": [
+        "privacy_review",
+        "data_classification"
+      ],
+      "depends_on": [
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "privacy_review",
+          "data_classification"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.reliability",
+      "display_name": "Reliability and Operations Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Monitors service health, incident response, recovery, and operational readiness.",
+      "capabilities": [
+        "health_monitoring",
+        "incident_diagnosis"
+      ],
+      "depends_on": [
+        "environment"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "health_monitoring",
+          "incident_diagnosis"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.release",
+      "display_name": "Release Management Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Prepares versioning, changelogs, release evidence, and staged rollout plans.",
+      "capabilities": [
+        "prepare_release",
+        "release_validation"
+      ],
+      "depends_on": [
+        "quality",
+        "review"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "prepare_release",
+          "release_validation"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.deployment",
+      "display_name": "Deployment Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Executes approved deployments and verifies rollback readiness.",
+      "capabilities": [
+        "deploy_approved_artifacts",
+        "verify_deployment"
+      ],
+      "depends_on": [
+        "environment",
+        "release"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "deploy_approved_artifacts",
+          "verify_deployment"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.documentation",
+      "display_name": "Documentation Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Maintains user guides, technical references, architecture records, and release notes.",
+      "capabilities": [
+        "write_documentation",
+        "index_documentation"
+      ],
+      "depends_on": [
+        "source"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "write_documentation",
+          "index_documentation"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.research",
+      "display_name": "Research Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Researches technical options and produces evidence-backed comparisons.",
+      "capabilities": [
+        "research_public_sources",
+        "summarize_evidence"
+      ],
+      "depends_on": [
+        "source"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "research_public_sources",
+          "summarize_evidence"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.model",
+      "display_name": "AI Model Management Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Catalogs models, evaluates capabilities, licensing, context limits, and deployment fit.",
+      "capabilities": [
+        "catalog_models",
+        "evaluate_models"
+      ],
+      "depends_on": [
+        "source",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "catalog_models",
+          "evaluate_models"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.router",
+      "display_name": "AI Model Routing Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Selects approved models based on task, quality, latency, availability, and cost policy.",
+      "capabilities": [
+        "route_model_requests",
+        "apply_model_fallbacks"
+      ],
+      "depends_on": [
+        "model",
+        "environment"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "route_model_requests",
+          "apply_model_fallbacks"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.memory",
+      "display_name": "Knowledge and Memory Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Manages approved project knowledge, retrieval indexes, provenance, and retention rules.",
+      "capabilities": [
+        "index_approved_knowledge",
+        "retrieve_context"
+      ],
+      "depends_on": [
+        "privacy",
+        "source"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "index_approved_knowledge",
+          "retrieve_context"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.workflow",
+      "display_name": "Workflow Automation Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Defines reusable workflows, schedules, triggers, and cross-agent handoffs.",
+      "capabilities": [
+        "design_workflows",
+        "schedule_approved_jobs"
+      ],
+      "depends_on": [
+        "orchestrator"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "design_workflows",
+          "schedule_approved_jobs"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.factory",
+      "display_name": "AI Factory Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Creates governed project workspaces, service scaffolds, and reusable production assets.",
+      "capabilities": [
+        "scaffold_projects",
+        "register_factory_assets"
+      ],
+      "depends_on": [
+        "architecture",
+        "engineering"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "scaffold_projects",
+          "register_factory_assets"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.appfactory",
+      "display_name": "Application Factory Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Coordinates repeatable mobile, web, and desktop application generation.",
+      "capabilities": [
+        "scaffold_applications",
+        "validate_app_structure"
+      ],
+      "depends_on": [
+        "factory",
+        "quality"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "scaffold_applications",
+          "validate_app_structure"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.repair",
+      "display_name": "Universal Repair Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Coordinates safe diagnostics and authorized repair workflows across supported devices.",
+      "capabilities": [
+        "diagnose_supported_devices",
+        "prepare_repair_plan"
+      ],
+      "depends_on": [
+        "source",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "diagnose_supported_devices",
+          "prepare_repair_plan"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.device",
+      "display_name": "Device Compatibility Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Maintains device, operating-system, firmware, driver, and tool compatibility records.",
+      "capabilities": [
+        "catalog_device_compatibility",
+        "validate_device_support"
+      ],
+      "depends_on": [
+        "source",
+        "repair"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "catalog_device_compatibility",
+          "validate_device_support"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.firmware",
+      "display_name": "Firmware and Update Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Plans authorized firmware and over-the-air updates with staged rollout and recovery safeguards.",
+      "capabilities": [
+        "validate_firmware_metadata",
+        "plan_staged_updates"
+      ],
+      "depends_on": [
+        "security",
+        "device"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "validate_firmware_metadata",
+          "plan_staged_updates"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.academy",
+      "display_name": "Academy and Learning Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Builds lessons, labs, assessments, learning paths, and certification evidence.",
+      "capabilities": [
+        "create_learning_content",
+        "evaluate_learning"
+      ],
+      "depends_on": [
+        "documentation",
+        "quality"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "create_learning_content",
+          "evaluate_learning"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.support",
+      "display_name": "Customer Support Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Classifies support requests, retrieves approved guidance, and prepares responses.",
+      "capabilities": [
+        "triage_support",
+        "retrieve_approved_answers"
+      ],
+      "depends_on": [
+        "memory",
+        "documentation"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "triage_support",
+          "retrieve_approved_answers"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.business",
+      "display_name": "Business Operations Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Supports project operations, process documentation, and operational reporting.",
+      "capabilities": [
+        "prepare_business_reports",
+        "map_business_processes"
+      ],
+      "depends_on": [
+        "privacy"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "prepare_business_reports",
+          "map_business_processes"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.finance",
+      "display_name": "Finance Operations Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Prepares budgets, cost estimates, and financial analysis; cannot move money.",
+      "capabilities": [
+        "estimate_costs",
+        "prepare_financial_reports"
+      ],
+      "depends_on": [
+        "business"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "estimate_costs",
+          "prepare_financial_reports"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.marketing",
+      "display_name": "Marketing and Growth Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Prepares approved campaign plans, product messaging, and channel analysis.",
+      "capabilities": [
+        "draft_campaigns",
+        "analyze_campaign_metrics"
+      ],
+      "depends_on": [
+        "research",
+        "privacy"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "draft_campaigns",
+          "analyze_campaign_metrics"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.commerce",
+      "display_name": "Commerce Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Supports catalog, order, inventory, and storefront workflows under explicit permissions.",
+      "capabilities": [
+        "manage_approved_catalog_data",
+        "analyze_orders"
+      ],
+      "depends_on": [
+        "business",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "manage_approved_catalog_data",
+          "analyze_orders"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.creative",
+      "display_name": "Creative Studio Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Coordinates approved image, audio, video, and brand asset production.",
+      "capabilities": [
+        "create_creative_briefs",
+        "manage_brand_assets"
+      ],
+      "depends_on": [
+        "documentation"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "create_creative_briefs",
+          "manage_brand_assets"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.analytics",
+      "display_name": "Analytics and Reporting Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Builds trustworthy metrics, dashboards, and cross-project performance reports.",
+      "capabilities": [
+        "analyze_approved_data",
+        "publish_internal_reports"
+      ],
+      "depends_on": [
+        "database",
+        "privacy"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "analyze_approved_data",
+          "publish_internal_reports"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.integration",
+      "display_name": "Integration Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Connects approved external systems using scoped connectors and documented contracts.",
+      "capabilities": [
+        "configure_approved_integrations",
+        "validate_connector_contracts"
+      ],
+      "depends_on": [
+        "environment",
+        "security"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "configure_approved_integrations",
+          "validate_connector_contracts"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.accessibility",
+      "display_name": "Accessibility Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Reviews user experiences against accessibility requirements and proposes fixes.",
+      "capabilities": [
+        "accessibility_audit",
+        "recommend_accessibility_fixes"
+      ],
+      "depends_on": [
+        "quality"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "accessibility_audit",
+          "recommend_accessibility_fixes"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    },
+    {
+      "agent_id": "jrocai.legal",
+      "display_name": "License and Compliance Agent",
+      "version": "1.0.0",
+      "status": "planned",
+      "scope": "platform_wide",
+      "mission": "Reviews software licenses, third-party terms, and compliance obligations; escalates legal judgments.",
+      "capabilities": [
+        "license_review",
+        "compliance_checklist"
+      ],
+      "depends_on": [
+        "source",
+        "privacy"
+      ],
+      "permissions": {
+        "default": "deny",
+        "granted_capabilities": [
+          "license_review",
+          "compliance_checklist"
+        ],
+        "requires_human_approval": true
+      },
+      "secret_access": "through_environment_agent_only",
+      "audit_required": true
+    }
+  ]
+}
