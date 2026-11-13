@@ -8,7 +8,8 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, unquote, urlparse
+from .github_client import GitHubApiError, GitHubReadClient
 
 AGENTS = [
     {"agent_id":"source-agent","name":"J-ROC AI Source Agent","description":"Platform-wide repository intelligence and controlled source coordination.","permissions":["repository.read","source.propose","build.request"]},
