@@ -77,3 +77,43 @@ test("PostgreSQL queue claims and completes work through database functions", as
   const persistedPayload = JSON.parse(db.calls[0].params[5]);
   assert.equal(persistedPayload.password, "[REDACTED]");
 });
+
+test("PostgreSQL agent definition store persists manifests and selects the latest lifecycle record", async () => {
+  const db = fakeDatabase((sql, params) => {
+    if (sql.includes("select manifest")) return { rows: [{ manifest: { agentId: "jrocai.demo", version: "1.0.0" } }] };
+    return { rows: [{ agent_id: params[0], agent_version: params[1], lifecycle_state: params[2] }] };
+  });
+  const { PostgresAgentDefinitionStore } = await import("../postgres-adapters.mjs");
+  const store = new PostgresAgentDefinitionStore(db);
+  const manifest = {
+    agentId: "jrocai.demo", version: "1.0.0", lifecycleState: "registered",
+    health: { status: "pending" }, tests: { status: "pending" }
+  };
+  assert.equal((await store.register(manifest)).lifecycle_state, "registered");
+  assert.equal((await store.listRegistered())[0].agentId, "jrocai.demo");
+  await assert.rejects(
+    store.register({ ...manifest, lifecycleState: "available" }),
+    /readiness pass/
+  );
+});
+
+test("PostgreSQL approval store creates, approves, rejects, and consumes one-time approvals", async () => {
+  const db = fakeDatabase((sql) => {
+    if (sql.includes("insert into public.platform_agent_approvals")) return { rows: [{ approval_id: "approval-1" }] };
+    if (sql.includes("consume_platform_agent_approval")) return { rows: [{ consumed: true }] };
+    return { rows: [{ approval_id: "approval-1" }] };
+  });
+  const store = new PostgresApprovalStore(db);
+  const approvalId = await store.request({
+    tenantId: "t1", requestId: "r1", agentId: "jrocai.demo",
+    capability: "demo.release", principalId: "p1",
+    reason: "release request", expiresAt: new Date(Date.now() + 60000).toISOString()
+  });
+  assert.equal(approvalId, "approval-1");
+  assert.equal(await store.approve({ approvalId, approvedBy: "chairman", reason: "approved" }), true);
+  assert.equal(await store.consume({
+    approvalId, requestId: "r1", agentId: "jrocai.demo",
+    capability: "demo.release", tenantId: "t1", principalId: "p1"
+  }), true);
+  assert.equal(db.calls.length, 3);
+});
