@@ -7,7 +7,7 @@ Ten waves × ten implementation batches = 100 batches. Existing Android and back
 | 1 | Android phone foundation, assistant, J-Bot, settings and local history | 1–10 | Existing foundation; validation deferred |
 | 2 | Intelligence, production services, database, workers and integrations | 11–20 | Initial foundation committed; remaining work open |
 | 3 | Identity, sessions, roles, privacy, audit and access control | 21–30 | Identity API, encrypted Android sessions, protected role administration and persistent sign-in lockout added; email verification, recovery and tenant enforcement open |
-| 4 | Model center, local routing, memory and provider policy | 31–40 | Loopback-only model adapter, local-first assistant routing, Android live status and user-controlled account memory added; full model catalog policy and memory-to-assistant integration remain open |
+| 4 | Model center, local routing, memory and provider policy | 31–40 | Loopback-only model adapter, local-first assistant routing, Android live status and account-scoped user-controlled memory interface added; full model catalog policy and memory-to-assistant integration remain open |
 | 5 | J-Bot repair intelligence, profiles, diagnostics and safety | 41–50 | Repair profile and session foundation added |
 | 6 | Agent factory, worker lifecycle, task orchestration and workflows | 51–60 | Workflow definitions with ordered steps, versioned permission-bounded agents, worker heartbeat and lease renewal added; durable worker dispatch and sandbox remain open |
 | 7 | Application factory, project workspaces and build pipelines | 61–70 | Approval-gated recipe and worker-job orchestration foundation added; isolated build execution open |
