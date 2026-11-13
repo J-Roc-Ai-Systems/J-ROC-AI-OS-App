@@ -1,5 +1,5 @@
 """Durable Wave Six through Ten service registry and approval-gated agent job queue."""
-import json, os, uuid
+import json, os, re, uuid
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -158,6 +158,43 @@ RESOURCE_REQUIRED={
  "extension_reviews":("extension_id","reviewer"),"entitlements":("subject_id","entitlement"),
  "export_requests":("subject_id","format","scope"),"privacy_consents":("subject_id","purpose","granted")
 }
+RESOURCE_REQUIRED.update({
+ "agent_profiles":("agent_id","capabilities"),"agent_delegations":("source_agent","target_agent","task_reference"),
+ "agent_knowledge":("topic","source_reference","content"),"agent_evaluations":("agent_id","evaluation_period","metrics"),
+ "sdk_releases":("package","version","target_platforms"),"application_projects":("project_id","name","platforms"),
+ "website_projects":("project_id","domain","brand_profile"),"interface_components":("component_id","version","schema"),
+ "integrations":("integration_id","provider","capabilities"),"api_versions":("api_name","version","schema_reference"),
+ "developer_workspaces":("workspace_id","owner_reference"),"dependency_reviews":("manifest_reference","dependencies"),
+ "release_plans":("application_id","version","approval_reference"),"operating_system_services":("service_id","version","capabilities"),
+ "accessibility_profiles":("subject_id","preferences"),"file_indexes":("subject_id","source_reference"),
+ "system_diagnostics":("device_id","checks"),"network_profiles":("device_id","connection_type"),
+ "backup_manifests":("subject_id","scope","retention_days"),"organizations":("org_id","name"),
+ "role_assignments":("subject_id","role","org_id"),"identity_providers":("provider_id","protocol"),
+ "compliance_controls":("control_id","framework","evidence"),"data_policies":("classification","retention_days"),
+ "service_incidents":("service_id","severity","summary"),"recovery_plans":("service_id","recovery_objective"),
+ "billing_entries":("ledger_reference","amount","currency"),"partners":("partner_id","name","agreement_reference"),
+ "onboarding_records":("subject_id","checklist"),"attribution_events":("campaign_id","event_type"),
+ "customer_health":("subject_id","health_score"),"certification_reviews":("extension_id","reviewer","criteria")
+})
+RESOURCE_ENUMS={"severity":{"info","low","medium","high","critical"},"format":{"json","csv","zip"},"protocol":{"oidc","saml","oauth2"}}
+def _validate_resource_data(resource_type:str,data:dict):
+ missing=[key for key in RESOURCE_REQUIRED.get(resource_type,()) if key not in data or data[key] in (None,"",[],{})]
+ if missing:raise HTTPException(422,{"message":"Required domain fields are missing.","fields":missing})
+ for key,allowed in RESOURCE_ENUMS.items():
+  if key in data and data[key] not in allowed:raise HTTPException(422,"Unsupported value for "+key+".")
+ if "steps" in data:
+  steps=data["steps"]; allowed_steps={"agent_task","approval","condition","notification","wait"}
+  if not isinstance(steps,list) or len(steps)>50 or any(not isinstance(step,dict) or step.get("type") not in allowed_steps for step in steps):
+   raise HTTPException(422,"Workflow steps must be a list of at most fifty approved step types.")
+ if "retention_days" in data and (not isinstance(data["retention_days"],int) or not 1<=data["retention_days"]<=36500):raise HTTPException(422,"Retention days must be between 1 and 36500.")
+ if "health_score" in data and (not isinstance(data["health_score"],(int,float)) or not 0<=data["health_score"]<=100):raise HTTPException(422,"Health score must be between zero and one hundred.")
+ if "amount" in data and (not isinstance(data["amount"],(int,float)) or data["amount"]<0):raise HTTPException(422,"Ledger amount must be a non-negative number.")
+ if "granted" in data and not isinstance(data["granted"],bool):raise HTTPException(422,"Consent granted must be a boolean.")
+ if "owner_confirmation" in data and not isinstance(data["owner_confirmation"],bool):raise HTTPException(422,"Owner confirmation must be a boolean.")
+ if resource_type=="local_models" and data.get("runtime") not in {"local","localhost"}:raise HTTPException(403,"Only local model runtimes are accepted under the zero-dollar default.")
+ if resource_type=="device_enrollments" and data.get("owner_confirmation") is not True:raise HTTPException(403,"Device owner confirmation is required.")
+ if resource_type=="marketplace_extensions" and not isinstance(data.get("manifest"),dict):raise HTTPException(422,"Extension manifest must be a structured object.")
+ if resource_type=="billing_entries" and not re.fullmatch(r"[A-Z]{3}",str(data.get("currency",""))):raise HTTPException(422,"Currency must be a three-letter uppercase code.")
 def _clean_resource(value):
  if isinstance(value,dict):
   return {str(k):_clean_resource(v) for k,v in value.items() if not any(x in str(k).lower() for x in SENSITIVE_KEYS)}
@@ -193,9 +230,7 @@ def wave_resource_catalog():
 @router.post("/wave-resources/{resource_type}")
 def create_wave_resource(resource_type:str,item:ResourceCreate):
  if resource_type not in RESOURCE_TYPES:raise HTTPException(404,"Wave resource type is not registered.")
- required=RESOURCE_REQUIRED.get(resource_type,())
- missing=[key for key in required if key not in item.data or item.data[key] in (None,"",[],{})]
- if missing:raise HTTPException(422,{"message":"Required domain fields are missing.","fields":missing})
+ _validate_resource_data(resource_type,item.data)
  data=_clean_resource(item.data)
  if len(json.dumps(data,ensure_ascii=False))>100000:raise HTTPException(413,"Resource data exceeds 100 kilobytes.")
  if resource_type=="device_enrollments" and data.get("owner_confirmation") is not True:raise HTTPException(403,"Device owner confirmation is required.")
