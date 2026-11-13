@@ -104,7 +104,7 @@ fun RepairScreen(settings:SecureSettings,client:RepairClient,onBack:()->Unit,run
                     Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
                         Text(profile.optString("manufacturer")+" "+profile.optString("model"),color=Color.White,fontWeight=FontWeight.Bold)
                         Text("Profile: "+profile.optString("profile_id")+" • "+profile.optString("operating_system"),color=Color(0xFFAAB6C5),fontSize=11.sp)
-                        Text("Methods: "+profile.optJSONArray("supported_methods").toString(),color=Color(0xFFAAB6C5),fontSize=11.sp)
+                        Text("Methods: "+(profile.optJSONArray("supported_methods") ?: JSONArray()).toString(),color=Color(0xFFAAB6C5),fontSize=11.sp)
                     }
                 }
             }
