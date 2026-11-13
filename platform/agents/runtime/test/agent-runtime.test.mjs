@@ -51,7 +51,8 @@ function createHarness(options = {}) {
   };
   const idempotencyStore = new Map();
   const handlers = new Map([
-    ["jrocai.demo:demo.read", async () => ({ answer: 42, apiKey: "never-return-this" })]
+    ["jrocai.demo:demo.read", async () => ({ answer: 42, apiKey: "never-return-this" })],
+    ["jrocai.demo:demo.release", async () => ({ releasePlan: "prepared" })]
   ]);
   const approvalStore = options.approvalStore ?? null;
   const runtime = new AgentRuntime({
