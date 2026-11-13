@@ -64,6 +64,20 @@ def submit_job(item:JobSubmission): return workers.submit(item)
 @router.get("/jobs")
 def list_jobs(limit:int=Query(default=100,ge=1,le=200)): return workers.list_jobs(limit)
 
+@worker_router.post("/workers/{worker_id}/heartbeat")
+def worker_heartbeat(worker_id:str, authenticated_worker:str=Depends(require_worker_identity)):
+    if authenticated_worker != worker_id: raise HTTPException(403,"Worker identity mismatch")
+    result=workers.heartbeat(authenticated_worker)
+    if not result: raise HTTPException(403,"Worker is paused, disabled or unknown")
+    return result
+
+@worker_router.post("/jobs/{job_id}/heartbeat")
+def renew_job_lease(job_id:str, worker_id:str=Query(min_length=2,max_length=80), authenticated_worker:str=Depends(require_worker_identity)):
+    if authenticated_worker != worker_id: raise HTTPException(403,"Worker identity mismatch")
+    result=workers.renew_lease(job_id,authenticated_worker)
+    if not result: raise HTTPException(409,"Job lease cannot be renewed.")
+    return result
+
 @worker_router.post("/workers/{worker_id}/claim")
 def claim_job(worker_id:str, authenticated_worker:str=Depends(require_worker_identity)):
     if authenticated_worker != worker_id: raise HTTPException(403,"Worker identity mismatch")
