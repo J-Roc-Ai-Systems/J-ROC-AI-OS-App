@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "agent_id": "replace-with-stable-id",
+  "display_name": "Replace with agent name",
+  "purpose": "Single, bounded responsibility",
+  "capabilities": [],
+  "permissions": [],
+  "input_schema": {},
+  "output_schema": {},
+  "secret_references": [],
+  "execution": {
+    "worker_capability": "replace-with-worker-capability",
+    "sandbox_required": true,
+    "network_access": "deny_by_default"
+  },
+  "audit": {
+    "required": true,
+    "redact_sensitive_values": true
+  }
+}
