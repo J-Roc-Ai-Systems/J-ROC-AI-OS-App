@@ -3,6 +3,7 @@
   "transport": "host-defined; JSON-compatible payloads",
   "request": {
     "requestId": "unique-id",
+    "idempotencyKey": "tenant-scoped-unique-key",
     "agentId": "jrocai.agent-id",
     "agentVersion": "1.0.0",
     "capability": "domain.action",
@@ -33,6 +34,7 @@
   },
   "dispatchChecks": [
     "agent lifecycle state is available",
+    "idempotency reservation is acquired or a completed result is replayed",
     "manifest and version match",
     "capability is declared",
     "host is supported",
@@ -71,6 +73,10 @@
     "TIMEOUT",
     "AUDIT_UNAVAILABLE",
     "INVALID_INPUT",
+    "IDEMPOTENCY_CONFLICT",
+    "REQUEST_IN_PROGRESS",
+    "IDEMPOTENCY_UNAVAILABLE",
+    "AGENT_VERSION_MISMATCH",
     "INTERNAL_ERROR"
   ]
 }
