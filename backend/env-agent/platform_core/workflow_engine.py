@@ -68,6 +68,9 @@ def transition(run_id:str,step_index:int,payload:Transition):
  if not run or not step:raise HTTPException(404,"Workflow run or step not found.")
  if run["state"] in {"completed","failed","cancelled"}:raise HTTPException(409,"Workflow run is terminal.")
  if payload.state=="running" and step["state"]!="pending":raise HTTPException(409,"Only pending steps can start.")
+ if payload.state=="running":
+  blocked=db.one("SELECT step_index FROM workflow_run_steps WHERE run_id=? AND step_index<? AND state NOT IN ('completed','skipped') LIMIT 1",(run_id,step_index))
+  if blocked:raise HTTPException(409,"Workflow steps must execute in their defined order.")
  if payload.state in {"completed","failed","skipped"} and step["state"]!="running":raise HTTPException(409,"Only running steps can finish.")
  now=utc_now()
  db.execute("UPDATE workflow_run_steps SET state=?,output=?,error=?,started_at=COALESCE(started_at,?),finished_at=? WHERE step_id=?",
