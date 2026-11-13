@@ -117,6 +117,7 @@ fun WaveSixToTenHub(onBack:()->Unit){
    } finally { busy=false }
   }
  }
+ LaunchedEffect(Unit) { refresh() }
  Surface(modifier=Modifier.fillMaxSize(),color=Color(0xFF0B0F14)){
   Column(modifier=Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
    Text("J-ROC AI",color=Color.White,fontSize=25.sp,fontWeight=FontWeight.Bold)
