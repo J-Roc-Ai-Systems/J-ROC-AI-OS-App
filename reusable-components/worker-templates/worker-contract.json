@@ -1,0 +1,10 @@
+{
+  "template_name": "J-ROC AI Worker Contract",
+  "template_version": "1.0.0",
+  "required_fields": ["worker_id", "display_name", "worker_type", "capabilities", "max_concurrent_jobs"],
+  "default_max_concurrent_jobs": 1,
+  "execution_policy": "allowlisted_handlers_only",
+  "network_policy": "deny_by_default",
+  "secret_policy": "Environment Agent references only",
+  "approval_required_for": ["external_network_access", "filesystem_write", "device_control", "paid_cloud_execution"]
+}
