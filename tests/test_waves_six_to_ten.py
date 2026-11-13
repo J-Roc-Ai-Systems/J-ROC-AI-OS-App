@@ -30,7 +30,7 @@ class WaveSixTenTests(unittest.TestCase):
   with self.assertRaises(Exception):m.create_agent_job(AgentJobCreate(job_type="device_unlock",title="Unlock device",objective="Unlock device security",batch=72,agent_id="repair-agent"))
  def test_decision_cannot_be_repeated(self):
   m.register_agent(AgentRegistration(agent_id="docs-agent",display_name="Docs Agent"))
-  j=m.create_agent_job(AgentJobCreate(job_type="docs.review",title="Review docs",objective="Review technical documentation",batch=57,agent_id="docs-agent"))
+  j=m.create_agent_job(AgentJobCreate(job_type="documentation.review",title="Review docs",objective="Review technical documentation",batch=57,agent_id="docs-agent"))
   m.decide_agent_job(j["job_id"],JobDecision(decision="reject",reason="Needs more evidence"))
   with self.assertRaises(Exception):m.decide_agent_job(j["job_id"],JobDecision(decision="approve",reason="Late approval"))
 
