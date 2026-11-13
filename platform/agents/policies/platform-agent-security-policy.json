@@ -1,0 +1,83 @@
+{
+  "policyVersion": "1.0.0",
+  "appliesTo": "all J-ROC AI agents, products, services, workers and environments",
+  "defaultPosture": "deny-unless-explicitly-granted",
+  "identity": {
+    "everyAgentHas": "stable agent identifier, version, owner, manifest and lifecycle state",
+    "noSharedHumanCredentials": true,
+    "serviceIdentity": "short-lived, scoped identity issued by the host platform"
+  },
+  "permissions": {
+    "leastPrivilege": true,
+    "permissionsMustBeDeclared": true,
+    "crossTenantAccess": "deny",
+    "privateRepositoryAccess": "only through explicitly authorized GitHub integration and repository permissions",
+    "filesystem": "workspace-scoped; destructive operations require approval",
+    "network": "deny by default; allow only declared destinations and host-approved adapters"
+  },
+  "secrets": {
+    "owner": "Environment Agent",
+    "agentsReceive": "secret references or short-lived scoped credentials, never copied secret values in prompts or logs",
+    "forbiddenLocations": [
+      "source code",
+      "Git history",
+      "APK or application package",
+      "client bundles",
+      "logs",
+      "screenshots",
+      "test fixtures",
+      "documentation"
+    ],
+    "rotation": "request through Environment Agent; never print secret material",
+    "localDevelopment": "use ignored local configuration and documented placeholder examples only"
+  },
+  "execution": {
+    "untrustedCode": "never execute code during source discovery or inspection",
+    "dependencyChanges": "require license, provenance, vulnerability and compatibility review",
+    "externalSideEffects": "require explicit approval unless a narrowly scoped standing authorization exists",
+    "productionChanges": "require tests, review, approval and rollback plan",
+    "financialActions": "require explicit approval and enforce the zero-dollar spending gate",
+    "deviceActions": "only on owner-authorized devices; explain irreversible or data-loss risks before approval"
+  },
+  "data": {
+    "minimizeCollection": true,
+    "tenantIsolation": true,
+    "retention": "declared per data class",
+    "sensitiveData": "do not place personal secrets or credentials in agent memory",
+    "provenance": "record source, timestamp, version or checksum when available"
+  },
+  "audit": {
+    "required": true,
+    "record": [
+      "agent identifier and version",
+      "request identifier",
+      "requesting principal",
+      "declared capability",
+      "permission decision",
+      "approval reference",
+      "source references",
+      "result status",
+      "timestamps",
+      "error category"
+    ],
+    "neverRecord": [
+      "passwords",
+      "access tokens",
+      "private keys",
+      "raw secret values"
+    ],
+    "truthfulness": "distinguish proposed, attempted, completed, verified and failed operations"
+  },
+  "safetyEscalation": {
+    "escalateOn": [
+      "permission ambiguity",
+      "unknown license",
+      "suspected secret exposure",
+      "tenant boundary violation",
+      "untrusted executable content",
+      "data-loss risk",
+      "unexpected cost"
+    ],
+    "failClosed": true
+  }
+}
