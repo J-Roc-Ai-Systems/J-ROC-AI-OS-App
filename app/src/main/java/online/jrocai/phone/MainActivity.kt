@@ -47,6 +47,7 @@ import online.jrocai.phone.data.ChatMessage
 import online.jrocai.phone.data.ConversationStore
 import online.jrocai.phone.data.EnvGatewayClient
 import online.jrocai.phone.data.SecureSettings
+import online.jrocai.phone.data.PlatformOperationsClient
 import java.text.DateFormat
 import java.util.Date
 
@@ -141,7 +142,7 @@ private fun JrocPhoneApp(
                     messages.clear()
                 })
                 "Device Tools" -> DeviceTools()
-                "Wave 2" -> WaveTwoHub(onBack = { selected = "Command Center" })
+                "Wave 2" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
                     messages.clear()
