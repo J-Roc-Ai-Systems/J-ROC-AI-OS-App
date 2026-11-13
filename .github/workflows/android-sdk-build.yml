@@ -1,0 +1,31 @@
+name: Android SDK Build
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - "sdk/**"
+      - "*.gradle.kts"
+      - "settings.gradle.kts"
+      - ".github/workflows/android-sdk-build.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "sdk/**"
+      - "*.gradle.kts"
+      - "settings.gradle.kts"
+      - ".github/workflows/android-sdk-build.yml"
+jobs:
+  debug-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Assemble Android debug APK
+        run: gradle :app:assembleDebug
