@@ -63,7 +63,7 @@ class JrocAiSdk(
                 if (path != "/health" && token.isNullOrBlank()) {
                     throw SdkRequestException("AUTH_REQUIRED", "A session access token is required.")
                 }
-                connection = (URL(endpoint + path).openConnection() as HttpURLConnection).apply {
+                val activeConnection = (URL(endpoint + path).openConnection() as HttpURLConnection).apply {
                     requestMethod = method
                     connectTimeout = connectTimeoutMs
                     readTimeout = readTimeoutMs
@@ -74,11 +74,12 @@ class JrocAiSdk(
                         setRequestProperty("Content-Type", "application/json; charset=utf-8")
                     }
                 }
-                if (body != null) connection.outputStream.use {
+                connection = activeConnection
+                if (body != null) activeConnection.outputStream.use {
                     it.write(body.toString().toByteArray(StandardCharsets.UTF_8))
                 }
-                val status = connection.responseCode
-                val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                val status = activeConnection.responseCode
+                val stream = if (status in 200..299) activeConnection.inputStream else activeConnection.errorStream
                 val text = stream?.use { BufferedReader(InputStreamReader(it, StandardCharsets.UTF_8)).readText() }.orEmpty()
                 if (status !in 200..299) {
                     val message = try { JSONObject(text).optString("message", "Request failed") }
