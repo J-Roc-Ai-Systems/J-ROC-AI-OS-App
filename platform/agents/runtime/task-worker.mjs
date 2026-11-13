@@ -26,6 +26,37 @@ export class AgentTaskWorker {
     this.leaseSeconds = leaseSeconds;
   }
 
+  async run({ signal, pollIntervalMilliseconds = 1000 } = {}) {
+    if (!(signal instanceof AbortSignal)) {
+      throw new TypeError("A shutdown AbortSignal is required for the worker loop.");
+    }
+    if (!Number.isInteger(pollIntervalMilliseconds) || pollIntervalMilliseconds < 50 || pollIntervalMilliseconds > 60000) {
+      throw new RangeError("Worker poll interval must be between 50 and 60000 milliseconds.");
+    }
+    const totals = { completed: 0, failedOrRequeued: 0, idle: 0, leaseLost: 0 };
+    while (!signal.aborted) {
+      try {
+        const outcome = await this.processOne();
+        totals[outcome.state] = (totals[outcome.state] ?? 0) + 1;
+      } catch {
+        // Queue and audit adapters must expose operational telemetry separately.
+        totals.failedOrRequeued += 1;
+      }
+      if (!signal.aborted) {
+        await new Promise((resolve) => {
+          const finish = () => {
+            clearTimeout(timer);
+            signal.removeEventListener("abort", finish);
+            resolve();
+          };
+          const timer = setTimeout(finish, pollIntervalMilliseconds);
+          signal.addEventListener("abort", finish, { once: true });
+        });
+      }
+    }
+    return Object.freeze(totals);
+  }
+
   async processOne() {
     const job = await this.queue.claim(this.workerId, this.leaseSeconds);
     if (!job) return { state: "idle" };
