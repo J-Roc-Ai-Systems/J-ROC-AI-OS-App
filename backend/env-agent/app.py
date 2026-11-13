@@ -16,6 +16,8 @@ from platform_core.wave345 import router as waves_three_to_five_router
 app.include_router(waves_three_to_five_router)
 from platform_core.domain_records import router as domain_records_router
 app.include_router(domain_records_router)
+from platform_core.wave610 import router as waves_six_to_ten_router
+app.include_router(waves_six_to_ten_router)
 
 @app.on_event("startup")
 def register_wave_two_services():
