@@ -1,4 +1,4 @@
-"""SQLite persistence for local-first Wave Two platform records."""
+"""SQLite persistence with additive, versioned migrations for the local-first platform."""
 import json
 import os
 import sqlite3
@@ -26,6 +26,16 @@ CREATE INDEX IF NOT EXISTS idx_platform_events_created ON platform_events(create
 CREATE TABLE IF NOT EXISTS platform_services (service_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, version TEXT NOT NULL, capabilities TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 """
 
+MIGRATIONS = [
+    (1, "worker credentials and leased jobs", [
+        "ALTER TABLE workers ADD COLUMN token_hash TEXT",
+        "ALTER TABLE workers ADD COLUMN last_heartbeat_at TEXT",
+        "ALTER TABLE jobs ADD COLUMN lease_expires_at TEXT",
+        "ALTER TABLE jobs ADD COLUMN max_attempts INTEGER NOT NULL DEFAULT 3",
+        "ALTER TABLE jobs ADD COLUMN cancel_requested INTEGER NOT NULL DEFAULT 0",
+    ]),
+]
+
 class PlatformDatabase:
     def __init__(self, path: str | Path | None = None):
         self.path = Path(path) if path else _DEFAULT_PATH
@@ -43,7 +53,33 @@ class PlatformDatabase:
                     if str(self.path) != ":memory:":
                         self._connection.execute("PRAGMA journal_mode=WAL")
                     self._connection.executescript(SCHEMA)
+                    self._run_migrations(self._connection)
         return self._connection
+
+    @staticmethod
+    def _run_migrations(connection: sqlite3.Connection) -> None:
+        connection.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL)")
+        import datetime
+        for version, name, statements in MIGRATIONS:
+            if connection.execute("SELECT 1 FROM schema_migrations WHERE version=?", (version,)).fetchone():
+                continue
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                for statement in statements:
+                    try:
+                        connection.execute(statement)
+                    except sqlite3.OperationalError as exc:
+                        # An interrupted/legacy rollout may already have applied a column.
+                        if "duplicate column name" not in str(exc).lower():
+                            raise
+                connection.execute(
+                    "INSERT INTO schema_migrations(version,name,applied_at) VALUES(?,?,?)",
+                    (version, name, datetime.datetime.now(datetime.timezone.utc).isoformat()),
+                )
+                connection.execute("COMMIT")
+            except Exception:
+                connection.execute("ROLLBACK")
+                raise
 
     def execute(self, sql: str, values: tuple = ()) -> int:
         with _LOCK:
@@ -71,6 +107,5 @@ class PlatformDatabase:
             return json.loads(value)
         except (TypeError, json.JSONDecodeError):
             return fallback
-
 
 db = PlatformDatabase()

@@ -1,5 +1,5 @@
-"""Authenticated API for Wave Two services. This first release is single-gateway; per-user identity is not implied."""
-from fastapi import APIRouter, Depends, HTTPException, Query
+"""Authenticated API for Wave Two services. Single-gateway access is not multi-user identity."""
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 from .security import require_platform_access
 from .models import WorkerRegistration, JobSubmission, IntegrationRegistration, ProjectCreate, DeviceRegistration, ApplicationRegistration
@@ -38,10 +38,17 @@ class NotificationInput(BaseModel):
     title: str = Field(min_length=1,max_length=160)
     message: str = Field(min_length=1,max_length=2000)
     severity: str = "info"
+class LeaseRequest(BaseModel):
+    lease_seconds: int = Field(default=90, ge=15, le=600)
+
+def require_worker(worker_id: str, worker_token: str | None):
+    if not workers.authenticate(worker_id, worker_token):
+        raise HTTPException(401, "Worker credential is missing or invalid.")
 
 @router.get("/status")
 def status():
-    return {"service":"jrocai-platform-core","database":"connected","mode":"single-gateway","spending_policy":"cloud_spending_disabled_by_default","modules":["application_factory","brain_foundation","integration_registry","production_workers","device_inventory","platform_registry","communications","knowledge","file_storage_metadata","application_inventory"]}
+    migrations=db.many("SELECT version,name,applied_at FROM schema_migrations ORDER BY version")
+    return {"service":"jrocai-platform-core","database":"connected","mode":"single-gateway","spending_policy":"cloud_spending_disabled_by_default","schema_version":max((row["version"] for row in migrations),default=0),"migrations":migrations,"modules":["application_factory","brain_foundation","integration_registry","production_workers","device_inventory","platform_registry","communications","knowledge","file_storage_metadata","application_inventory"]}
 
 @router.post("/workers")
 def register_worker(item:WorkerRegistration): return workers.register(item)
@@ -58,14 +65,33 @@ def submit_job(item:JobSubmission): return workers.submit(item)
 @router.get("/jobs")
 def list_jobs(limit:int=Query(default=100,ge=1,le=200)): return workers.list_jobs(limit)
 @router.post("/workers/{worker_id}/claim")
-def claim_job(worker_id:str):
-    if not workers.get(worker_id): raise HTTPException(404,"Worker not found")
-    return {"job":workers.claim(worker_id)}
+def claim_job(worker_id:str, lease:LeaseRequest, x_worker_token:str|None=Header(default=None)):
+    require_worker(worker_id,x_worker_token)
+    return {"job":workers.claim(worker_id,lease.lease_seconds)}
+@router.post("/workers/{worker_id}/heartbeat")
+def worker_heartbeat(worker_id:str, lease:LeaseRequest, x_worker_token:str|None=Header(default=None)):
+    require_worker(worker_id,x_worker_token)
+    result=workers.heartbeat(worker_id,lease.lease_seconds)
+    if not result: raise HTTPException(409,"Worker is unavailable or disabled.")
+    return result
 @router.post("/jobs/{job_id}/finish")
-def finish_job(job_id:str,payload:JobFinish):
+def finish_job(job_id:str,payload:JobFinish,x_worker_token:str|None=Header(default=None)):
+    require_worker(payload.worker_id,x_worker_token)
     result=workers.finish(job_id,payload.worker_id,payload.result,payload.error)
     if not result: raise HTTPException(409,"Job is not running for this worker")
     return result
+@router.post("/jobs/{job_id}/cancel")
+def cancel_job(job_id:str):
+    result=workers.cancel(job_id)
+    if not result: raise HTTPException(409,"Job cannot be cancelled in its current state.")
+    return result
+@router.post("/jobs/{job_id}/retry")
+def retry_job(job_id:str):
+    result=workers.retry(job_id)
+    if not result: raise HTTPException(409,"Job has no retry remaining or is not retryable.")
+    return result
+@router.post("/jobs/recover-expired")
+def recover_expired_jobs(): return workers.recover_expired()
 
 @router.post("/integrations")
 def register_integration(item:IntegrationRegistration):
@@ -126,7 +152,6 @@ def list_applications(): return applications.list()
 @router.get("/audit")
 def list_audit(limit:int=Query(default=100,ge=1,le=500)):
     return db.many("SELECT event_id,actor,action,resource_type,resource_id,details,created_at FROM audit_events ORDER BY event_id DESC LIMIT ?",(limit,))
-
 
 @router.get("/brain/status")
 def brain_status(): return brain.status()

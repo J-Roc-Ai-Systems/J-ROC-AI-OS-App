@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Any
 from pydantic import BaseModel, Field, ConfigDict
 
-
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -36,6 +35,7 @@ class JobSubmission(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     priority: int = Field(default=5, ge=1, le=10)
     required_capability: str | None = Field(default=None, max_length=80)
+    max_attempts: int = Field(default=3, ge=1, le=10)
 
 class IntegrationRegistration(BaseModel):
     model_config = ConfigDict(extra="forbid")
