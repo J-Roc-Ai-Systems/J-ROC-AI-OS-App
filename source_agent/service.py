@@ -73,7 +73,11 @@ class AgentStore:
     def get_task(self,task_id):
         with self.connect() as db:
             row=db.execute("SELECT * FROM tasks WHERE task_id=?",(task_id,)).fetchone()
-            return dict(row) if row else None
+            if row is None:
+                return None
+            task=dict(row)
+            task["requires_approval"]=bool(task["requires_approval"])
+            return task
 
     def approve(self,task_id,approved,actor):
         now=utc_now()
