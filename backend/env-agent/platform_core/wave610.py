@@ -1,5 +1,5 @@
 """Durable Wave Six through Ten service registry and approval-gated agent job queue."""
-import os, uuid
+import json, os, uuid
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
