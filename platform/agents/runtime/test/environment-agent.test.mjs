@@ -72,3 +72,29 @@ test("Environment Agent rejects expired or empty credentials", async () => {
     tenantId: "t1"
   }, async () => "must-not-run"), (error) => error.code === "CREDENTIAL_UNAVAILABLE");
 });
+
+test("Environment Agent blocks raw secret material in adapter results", async () => {
+  const events = [];
+  const agent = new EnvironmentAgent({
+    credentialProvider: {
+      async resolve() {
+        return { value: "sensitive-secret-123", expiresAt: Date.now() + 60000 };
+      }
+    },
+    auditStore: { async append(event) { events.push(event); } }
+  });
+  await assert.rejects(agent.withCredentials({
+    references: ["service/token"],
+    principal: {
+      authenticated: true,
+      principalId: "worker",
+      tenantId: "t1",
+      secretReferences: ["service/token"]
+    },
+    purpose: "test",
+    tenantId: "t1"
+  }, async (credentials) => ({ result: credentials["service/token"] })),
+  (error) => error.code === "SECRET_EXPOSURE_BLOCKED");
+  assert.equal(events.at(-1).event, "environment.secret_access.output_blocked");
+  assert.equal(JSON.stringify(events).includes("sensitive-secret-123"), false);
+});
