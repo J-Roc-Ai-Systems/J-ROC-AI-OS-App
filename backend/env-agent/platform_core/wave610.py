@@ -274,14 +274,31 @@ def update_wave_resource_state(resource_type:str,resource_id:str,item:ResourceSt
 @router.post("/agent-jobs/{job_id}/dispatch")
 def dispatch_approved_agent_job(job_id:str):
  _ensure()
- row=db.one("SELECT * FROM platform_agent_jobs WHERE job_id=?",(job_id,))
- if not row:raise HTTPException(404,"Agent job not found.")
- if row["state"]!="approved_queued":raise HTTPException(409,"Agent job must be explicitly approved before dispatch.")
- if row.get("worker_job_id"):raise HTTPException(409,"Agent job was already dispatched.")
- payload={"agent_job_id":job_id,"agent_id":row["agent_id"],"batch":row["batch"],"job_type":row["job_type"],"title":row["title"],"objective":row["objective"],"repository":row["repository"],"file_scope":db.decode(row["file_scope"],[]),"execution_contract":"structured_task_only_no_arbitrary_shell"}
- queued=workers.submit(JobSubmission(job_type="agent.structured_task",payload=payload,priority=5,required_capability="agent:"+row["agent_id"],max_attempts=2))
- db.execute("UPDATE platform_agent_jobs SET worker_job_id=?,state=?,updated_at=? WHERE job_id=?",(queued["job_id"],"dispatched",utc_now(),job_id))
- audit("agent_job.dispatch","agent_job",job_id,queued["job_id"])
+ connection=db.connect()
+ connection.execute("BEGIN IMMEDIATE")
+ try:
+  row=connection.execute("SELECT * FROM platform_agent_jobs WHERE job_id=?",(job_id,)).fetchone()
+  if not row:
+   connection.execute("ROLLBACK")
+   raise HTTPException(404,"Agent job not found.")
+  row=dict(row)
+  if row["state"]!="approved_queued":
+   connection.execute("ROLLBACK")
+   raise HTTPException(409,"Agent job must be explicitly approved before dispatch.")
+  if row.get("worker_job_id"):
+   connection.execute("ROLLBACK")
+   raise HTTPException(409,"Agent job was already dispatched.")
+  payload={"agent_job_id":job_id,"agent_id":row["agent_id"],"batch":row["batch"],"job_type":row["job_type"],"title":row["title"],"objective":row["objective"],"repository":row["repository"],"file_scope":db.decode(row["file_scope"],[]),"execution_contract":"structured_task_only_no_arbitrary_shell"}
+  queued=workers.submit(JobSubmission(job_type="agent.structured_task",payload=payload,priority=5,required_capability="agent:"+row["agent_id"],max_attempts=2))
+  connection.execute("UPDATE platform_agent_jobs SET worker_job_id=?,state=?,updated_at=? WHERE job_id=? AND state='approved_queued'",(queued["job_id"],"dispatched",utc_now(),job_id))
+  audit("agent_job.dispatch","agent_job",job_id,queued["job_id"])
+  connection.execute("COMMIT")
+ except HTTPException:
+  if connection.in_transaction:connection.execute("ROLLBACK")
+  raise
+ except Exception:
+  if connection.in_transaction:connection.execute("ROLLBACK")
+  raise
  return {"agent_job_id":job_id,"worker_job_id":queued["job_id"],"worker_queue_state":queued["state"],"required_worker_capability":"agent:"+row["agent_id"]}
 
 
