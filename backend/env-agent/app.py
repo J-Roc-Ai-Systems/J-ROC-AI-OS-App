@@ -13,8 +13,18 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="J-ROC AI Env Agent", version="0.2.0")
 
 from platform_core.api import router as platform_router, worker_router
+from platform_core.identity import router as identity_router, admin_router as identity_admin_router
+from platform_core.workflow_engine import router as workflow_router
+from platform_core.local_model_router import router as local_model_router
+from platform_core.repair_intelligence import router as repair_router
+
 app.include_router(platform_router)
 app.include_router(worker_router)
+app.include_router(identity_router)
+app.include_router(identity_admin_router)
+app.include_router(workflow_router)
+app.include_router(local_model_router)
+app.include_router(repair_router)
 
 
 @app.on_event("startup")
@@ -30,7 +40,13 @@ def register_wave_two_services():
         ("communication-center", "Communication Center", ["notifications", "read-state"]),
         ("knowledge-center", "Knowledge Center", ["document-index", "source-search"]),
         ("file-storage", "File Management", ["safe-file-inventory", "metadata-hashing"]),
-        ("application-inventory", "Application Management", ["application-registry"])
+        ("application-inventory", "Application Management", ["application-registry"]),
+        ("account-identity", "Account Identity", ["registration", "sessions", "revocation"]),
+        ("workflow-engine", "Workflow Engine", ["definitions", "durable-run-state"]),
+        ("local-model-router", "Local Model Router", ["loopback-discovery", "local-inference"]),
+        ("repair-intelligence", "Repair Intelligence", ["compatibility-profiles", "diagnostic-sessions"]),
+        ("security-governance", "Security Governance", ["audit", "secret-boundary"]),
+        ("release-management", "Release Management", ["version-registry", "approval-gates"])
     ]
     for service_id, display_name, capabilities in services:
         events.register_service(service_id, display_name, "0.2.0", capabilities)
