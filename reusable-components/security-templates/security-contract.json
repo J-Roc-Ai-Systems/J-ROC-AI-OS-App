@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "identity": "unique-principal",
+  "authentication": "short-lived-credential",
+  "authorization": "deny-by-default",
+  "permissions": [],
+  "tenant_scope": "required-when-multi-tenant",
+  "secret_storage": "Environment Agent only",
+  "audit": "required",
+  "sensitive_logging": "prohibited",
+  "network_egress": "deny-by-default",
+  "execution_isolation": "required-for-untrusted-work"
+}
