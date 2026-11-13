@@ -22,3 +22,9 @@ Read-only inspection and proposals can be queued. Source writes, build execution
 ## Build and test
 Android: `./gradlew :app:assembleDebug` (Windows: `gradlew.bat :app:assembleDebug`).
 Python: `python -m unittest discover -s tests/source_agent -v`.
+
+## SDK operations
+The Android client exposes health checks, agent registry retrieval, task submission and retrieval, approval decisions, repository metadata inspection, and repository file reads. All calls except the health check require the host application's access-token provider. Repository reads are performed by the Source Agent server, not directly from the Android application.
+
+## Build validation status
+The repository contains GitHub Actions workflows for the Python unit tests and Android debug assembly. The pull request has been opened in draft state. Workflow results have not yet been returned for the current head; do not treat the implementation as a verified APK until the Android workflow succeeds.
