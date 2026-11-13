@@ -56,6 +56,14 @@ export async function createPlatformAgentService({
     manifests: [...explicitManifests, ...definitionManifests, ...persistedManifests]
   });
 
+  // Seed missing platform definitions on first startup and persist the latest
+  // lifecycle state. Persisted rows are loaded last, so disabled or retired
+  // platform decisions are not silently overwritten by checked-in templates.
+  for (const summary of registry.list()) {
+    const manifest = registry.getAgent(summary.agentId);
+    await stores.definitionStore.register(manifest);
+  }
+
   const registeredHandlers = new Map(handlers);
   if (sourceAgent) {
     for (const [key, handler] of createSourceAgentHandlers(sourceAgent)) {
