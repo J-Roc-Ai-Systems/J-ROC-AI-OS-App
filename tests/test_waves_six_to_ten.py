@@ -52,11 +52,16 @@ class WaveSixTenTests(unittest.TestCase):
  def test_approved_job_dispatches_to_authenticated_worker_queue(self):
   from platform_core.models import WorkerRegistration
   m.register_agent(AgentRegistration(agent_id="source-agent",display_name="Source Agent",capabilities=["repository.inspect"]))
-  worker_module.workers.register(WorkerRegistration(worker_id="source-runner",display_name="Source Runner",worker_type="source",capabilities=["agent:source-agent"]))
+  registered=worker_module.workers.register(WorkerRegistration(worker_id="source-runner",display_name="Source Runner",worker_type="source",capabilities=["agent:source-agent"]))
   job=m.create_agent_job(AgentJobCreate(job_type="repository.review",title="Review repository",objective="Inspect repository structure and missing modules",batch=53,agent_id="source-agent"))
   m.decide_agent_job(job["job_id"],JobDecision(decision="approve",reason="Approved source review"))
   queued=m.dispatch_approved_agent_job(job["job_id"])
   self.assertEqual("queued",queued["worker_queue_state"])
+  self.assertEqual("dispatched",m.get_agent_job(job["job_id"])["state"])
+  claimed=worker_module.workers.claim("source-runner",45)
+  self.assertEqual(queued["worker_job_id"],claimed["job_id"])
+  completed=worker_module.workers.finish(claimed["job_id"],"source-runner",{"status":"reviewed","files_checked":2})
+  self.assertEqual("completed",completed["state"])
   self.assertEqual(queued["worker_job_id"],m.db.one("SELECT worker_job_id FROM platform_agent_jobs WHERE job_id=?",(job["job_id"],))["worker_job_id"])
  def test_environment_readiness_never_returns_secret_values(self):
   result=m.environment_readiness()
