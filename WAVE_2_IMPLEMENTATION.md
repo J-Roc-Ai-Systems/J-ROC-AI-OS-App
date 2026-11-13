@@ -1,77 +1,49 @@
 # Wave 2 Implementation Record
 
 Branch: `wave-2-intelligence-production`
-Base: `feature/phone-core-modules`
+Base: `a4d7891139521f7fc55822841ad841dcec4f0287`
 
-## Scope delivered in this implementation pass
+## This implementation increment
 
-- Added a persistent SQLite platform core for worker registrations, queued jobs, integrations, projects, devices, notifications, knowledge documents, application inventory, and audit events.
-- Added authenticated platform endpoints under `/platform/v1` using the existing Environment Agent gateway token boundary.
-- Added worker registration, pause/disable controls, durable job submission, capability-aware job claiming, and worker-bound completion.
-- Added integration registration that stores only Environment Agent secret references, never credential values.
-- Added application project registration and safe workspace preparation. Generated projects are not automatically executed.
-- Added device inventory and explicit device authorization state; registration does not grant control.
-- Added notification, knowledge search, application inventory, and audit endpoints.
-- Added an Android Wave Two hub screen with all ten batch areas. It clearly labels service states as not connected until a secured backend connection is configured.
+- Added an ordered SQLite schema migration runner with a persistent `schema_migrations` ledger.
+- Added a baseline migration and an additive worker identity and lease migration. Existing installations retain existing records; the migration checks the lease column before adding it.
+- Worker registration now rotates a cryptographically random worker credential and returns it once. Only a SHA-256 digest is stored in SQLite; the plaintext credential must be transferred into the Environment Agent secret store.
+- Worker job claiming and completion use a separate worker API router, require an individual worker credential, and verify the authenticated worker identity.
+- Added worker credential revocation and bounded job leases with stale-job recovery.
+- Administrator operations remain behind the Environment Agent gateway token.
+- The zero-dollar cloud spending gate remains unchanged.
 
-## Wave Two batch mapping
+## Security boundary
 
-| Batch | Current foundation |
-|---|---|
-| 11 Application Factory | Project registry and safe workspace preparation |
-| 12 Artificial Intelligence Brain | Local-only planning control plane; live reasoning model adapters and model orchestration remain outstanding |
-| 13 Integration Engine | Integration registry and secret-reference enforcement |
-| 14 Production Worker System | Persistent worker registry and job queue |
-| 15 Device Management | Device inventory and explicit authorization state |
-| 16 Platform Integration | Shared authenticated platform API, service registry and persistent event bus |
-| 17 Communication Center | Persistent notification service |
-| 18 Knowledge Center | Local text index with source references |
-| 19 File Management | Safe local file inventory and metadata hashing; upload, encryption and storage adapters remain outstanding |
-| 20 Application Management | Application inventory; installation and update adapters remain outstanding |
+The gateway token authorizes platform administration. A worker credential authorizes only that worker's claim and completion endpoints. Worker credentials are hashed at rest and can be revoked. This is not yet multi-user Chairman account identity or a hardened process sandbox. Worker code must run in a separately isolated runtime; the API does not execute arbitrary worker payloads.
 
-## Security and operating constraints
+## Wave Two delivery checklist
 
-- Provider credentials remain in the Environment Agent process environment or hosting secret manager.
-- Integration records accept only `env-agent://` secret references.
-- The platform API currently uses the existing shared gateway token and is therefore a single-gateway administrative boundary, not multi-user authentication. Do not expose it publicly until per-user identity, rate limiting, and tenant authorization are implemented.
-- No generated code or worker payload is automatically executed by the API.
-- Added a server-side zero-dollar spending gate: provider model calls require both an explicit enable flag and a positive monthly spending limit. Defaults remain disabled and zero dollars.
-- Device registration does not grant permission to perform device actions.
-- SQLite is the local-first development database. Production multi-user deployment requires a migration to a database with enforced tenant-level row policies.
-
-## Dependencies
-
-The implementation uses the existing FastAPI, Pydantic, SQLite standard library, and Jetpack Compose dependencies. No new paid service or Android library is required.
-
-## Deferred final validation
-
-Per the project instruction, comprehensive tests and Android builds are deferred until all development waves are complete. The final test plan must cover API authentication, database durability, worker claiming concurrency, permission boundaries, secret-reference validation, workspace path safety, notification redaction, device authorization, Android navigation, and integration with the existing assistant and Environment Agent.
-
-## Known remaining work
-
-- Connect the Android hub to the authenticated backend and add real loading, error, and empty states.
-- Replace shared gateway authentication with per-user identity and role-based authorization before public exposure.
-- Add bounded worker leases, stale-job recovery, cancellation, retry policy, and concurrency enforcement.
-- Add file upload, encrypted storage adapters, quota enforcement and file permissions.
-- Add live model routing adapters inside the Brain service; the Env Agent spending gate now blocks paid provider calls by default.
-- Add integration approval workflows and provider-specific adapters.
-- Add Android device discovery and operating-system permission flows.
-- Add release installation and update adapters with explicit user approval.
-
-
-## Delivery checklist snapshot (source inspection only)
-
-| Requirement | Status | Evidence or remaining work |
+| Requirement | Current status | Evidence |
 |---|---|---|
-| Implementation files exist for all ten batches | Complete for initial foundations | Batch-specific service modules and the Android Wave Two hub are present; full feature scope remains in progress. |
-| Services are registered with the platform | Complete for the ten Wave Two service foundations | Environment Agent startup registers the ten service identifiers in the persistent service registry. |
-| Android screen and navigation are integrated | Complete for the Wave Two hub entry point | Main application navigation opens the Wave Two hub; individual operational screens and live data binding remain outstanding. |
-| Backend services and database migrations are connected | Incomplete | FastAPI routes and SQLite schema initialization are connected; a versioned migration runner and migration history are still required. |
-| Agent and worker permissions are enforced | Incomplete | Gateway authentication and capability-aware job selection exist; worker-specific identity, role-based authorization, leases and execution sandboxing remain required. |
-| Environment Agent manages provider and integration secrets | Complete for current provider boundary | Provider key remains server-side; integrations store Environment Agent references only. Android gateway access remains protected by Android Keystore. |
-| Zero-dollar spending restrictions are enforced | Complete at provider gateway | Paid provider calls require an explicit enable flag and a positive monthly limit; defaults are disabled and zero dollars. |
-| Reusable components are documented | Complete for initial contracts | Reusable component library and worker/integration contracts are present. |
-| Dependencies and configuration are recorded | Complete for current foundation | Existing dependency set, environment variables, storage locations and deferred work are documented. |
-| Final comprehensive test plan is prepared | Complete as a plan only | Test scope is documented; no tests or builds have been run in this development wave. |
+| Ten batch foundations | In progress | Existing modules and Android Wave Two hub retained |
+| Platform service registration | Implemented foundation | Existing startup service registration |
+| Android hub navigation | Integrated | Existing MainActivity navigation |
+| Backend and versioned database migrations | Implemented foundation | Migration ledger and ordered baseline/additive migrations |
+| Agent and worker permissions | Implemented foundation | Gateway administration token, individual worker credentials, identity matching, revocation, bounded leases |
+| Environment Agent secret management | Implemented boundary | Worker token is one-time returned; integration credentials remain secret references |
+| Zero-dollar spending gate | Enforced at provider gateway | Paid cloud requests remain disabled unless both explicit enablement and positive limit are configured |
+| Reusable components | Initial contracts documented | reusable-components folder retained |
+| Dependencies and configuration | Documented | Existing FastAPI/Pydantic/SQLite and Android dependencies |
+| Comprehensive final test plan | Prepared, not executed | Validation deferred until the full build is complete |
 
-**Source-inspection checklist result: 8/10.** This is not a test pass or a production-readiness claim. The two incomplete requirements are database migrations and full agent/worker authorization. The Wave Two feature set itself remains under development.
+**Source inspection status:** the two previously outstanding foundations now have implementation code. This is not a test result. Wave Two remains under development; no build, automated test, security test, APK generation, or deployment was run in this increment.
+
+## Deferred implementation
+
+- Full Chairman account identity and tenant-level authorization.
+- Worker process sandboxing, operating-system isolation, network egress policy and signed worker packages.
+- Lease renewal/heartbeat and configurable retry/backoff/dead-letter policy.
+- Android live data binding, operational sub-screens and explicit loading/error/empty states.
+- Live model routing adapters, encrypted file upload/storage and quota enforcement.
+- Provider-specific integration approval and device discovery/authorization workflows.
+- Application install/update adapters with user approval.
+
+## Final validation plan
+
+After the entire build is complete, run one consolidated validation wave covering migration from an empty database and an existing database, migration idempotency, worker credential issuance/revocation, identity mismatch rejection, lease expiry recovery, concurrency and capability enforcement, API gateway authentication, secret redaction, path safety, Android navigation, backend integration, and full Android debug/release builds.
