@@ -10,7 +10,9 @@ First-party Android application codebase for the J-ROC AI phone experience.
 4. **Model Center** — Env Agent connection settings, model catalog loading, and model selection.
 5. **Conversation Manager** — locally persisted chat history with clear-history control.
 6. **Device Tools** — read-only Android hardware, build, and OS diagnostics.
-7. **J-ROC AI Settings** — local privacy, gateway-token removal, and history controls.
+7. **J-ROC AI Account** — account registration and sign-in with an encrypted local session token.
+8. **J-ROC AI Settings** — local privacy, gateway-token removal, and history controls.
+9. **Ten-Wave Platform Hub** — live Environment Agent service-registry connection and the 100-batch roadmap.
 
 ## Security architecture: Env Agent
 
@@ -23,7 +25,7 @@ First-party Android application codebase for the J-ROC AI phone experience.
 - Real `.env` files, signing keys, keystores, and local configuration are excluded by `.gitignore`.
 - Do not paste credentials into GitHub, source code, build logs, screenshots, or chat messages.
 
-The current shared gateway-token mechanism is a private development gate. Before public release, replace it with per-user authentication (for example, Supabase Auth JWT validation), authorization, rate limits, quotas, and audit logging. Never ship a shared gateway token inside the APK.
+The shared gateway-token mechanism remains the administrator API gate. Account sessions are separate and stored encrypted with Android Keystore. Account registration is currently a development foundation: email verification, account recovery, rate limiting, tenant enforcement and Chairman role provisioning remain required before public release.
 
 ## Env Agent setup
 
@@ -67,3 +69,8 @@ The app requires an HTTPS Env Agent endpoint for live AI calls. Device diagnosti
 ## Version
 
 Android app: 0.2.0
+
+
+## Ten-wave build register
+
+See [WAVE_BUILD_PLAN.md](WAVE_BUILD_PLAN.md) for the ten-wave, 100-batch implementation register and honest completion criteria. The current backend includes foundations for account identity, local model routing, repair diagnostics, workflow state, approval-gated build jobs, encrypted user files, enterprise fleet registries and release approvals. These foundations are not a claim that every wave is complete or production-ready.
