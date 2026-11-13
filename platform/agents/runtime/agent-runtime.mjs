@@ -166,21 +166,6 @@ export class AgentRuntime {
   }
 
   async #executeNew({ request, principal, host, manifest }, reservation) {
-    let authorization;
-    try {
-      authorization = await this.policyEngine.authorize({ manifest, request, principal, host });
-    } catch (error) {
-      await this.#audit({
-        event: "agent.execution.denied",
-        requestId: request.requestId,
-        agentId: manifest.agentId,
-        tenantId: request.tenantId,
-        principalId: principal?.principalId ?? null,
-        capability: request.capability,
-        errorCode: error instanceof AgentRuntimeError ? error.code : "PERMISSION_DENIED"
-      });
-      throw error;
-    }
     for (const dependencyId of (manifest.dependencies?.agents ?? [])) {
       const normalizedId = dependencyId.startsWith("jrocai.") ? dependencyId : `jrocai.${dependencyId}`;
       const dependency = this.registry.getAgent(normalizedId);
@@ -196,6 +181,24 @@ export class AgentRuntime {
     if (typeof handler !== "function") {
       await this.#audit({ event: "agent.dispatch.blocked", requestId: request.requestId, agentId: request.agentId, reason: "HANDLER_NOT_CONFIGURED" });
       throw new AgentRuntimeError("AGENT_NOT_AVAILABLE", "No execution handler is configured for this capability.", 503);
+    }
+
+    // Consume one-time human approvals only after all execution prerequisites
+    // and a concrete capability handler have been confirmed.
+    let authorization;
+    try {
+      authorization = await this.policyEngine.authorize({ manifest, request, principal, host });
+    } catch (error) {
+      await this.#audit({
+        event: "agent.execution.denied",
+        requestId: request.requestId,
+        agentId: manifest.agentId,
+        tenantId: request.tenantId,
+        principalId: principal?.principalId ?? null,
+        capability: request.capability,
+        errorCode: error instanceof AgentRuntimeError ? error.code : "PERMISSION_DENIED"
+      });
+      throw error;
     }
 
     const startedAt = new Date().toISOString();
