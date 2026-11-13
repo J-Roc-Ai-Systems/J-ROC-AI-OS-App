@@ -19,7 +19,7 @@ from platform_core.local_model_router import router as local_model_router
 from platform_core.repair_intelligence import router as repair_router
 from platform_core.build_factory import router as build_factory_router
 from platform_core.secure_storage import router as secure_storage_router
-from platform_core.enterprise import router as enterprise_router
+from platform_core.enterprise import router as enterprise_router, user_router as enterprise_user_router
 from platform_core.release_management import router as release_router
 from platform_core.agent_factory import router as agent_factory_router
 from platform_core.memory import router as memory_router
@@ -34,6 +34,7 @@ app.include_router(repair_router)
 app.include_router(build_factory_router)
 app.include_router(secure_storage_router)
 app.include_router(enterprise_router)
+app.include_router(enterprise_user_router)
 app.include_router(release_router)
 app.include_router(agent_factory_router)
 app.include_router(memory_router)
