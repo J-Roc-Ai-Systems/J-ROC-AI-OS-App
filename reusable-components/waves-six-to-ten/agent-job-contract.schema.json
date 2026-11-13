@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "J-ROC AI Structured Agent Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["job_type", "title", "objective", "batch", "agent_id"],
+  "properties": {
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "repository.review",
+        "repository.inspect",
+        "source.search",
+        "change.propose",
+        "build.verify",
+        "tests.run",
+        "documentation.review",
+        "dependency.audit",
+        "security.review",
+        "repair.diagnostics",
+        "device.compatibility",
+        "academy.course.review",
+        "website.brand.validate",
+        "model.local.discover",
+        "release.validate"
+      ]
+    },
+    "title": {"type": "string", "minLength": 3, "maxLength": 180},
+    "objective": {"type": "string", "minLength": 5, "maxLength": 4000},
+    "batch": {"type": "integer", "minimum": 51, "maximum": 100},
+    "agent_id": {"type": "string", "minLength": 2, "maxLength": 100},
+    "repository": {"type": ["string", "null"], "maxLength": 240},
+    "file_scope": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"type": "string", "maxLength": 240}
+    },
+    "approval_required": {"type": "boolean", "default": true}
+  }
+}
