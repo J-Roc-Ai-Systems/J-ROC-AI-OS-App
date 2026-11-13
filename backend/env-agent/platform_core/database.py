@@ -60,6 +60,10 @@ CREATE TABLE IF NOT EXISTS release_approvals(approval_id TEXT PRIMARY KEY,releas
 CREATE TABLE IF NOT EXISTS agent_definitions(agent_id TEXT PRIMARY KEY,name TEXT NOT NULL,purpose TEXT NOT NULL,state TEXT NOT NULL,current_version INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS agent_versions(agent_version_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL REFERENCES agent_definitions(agent_id) ON DELETE CASCADE,version INTEGER NOT NULL,capabilities TEXT NOT NULL,permissions TEXT NOT NULL,worker_capability TEXT NOT NULL,configuration TEXT NOT NULL,execution_policy TEXT NOT NULL,state TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(agent_id,version));
 CREATE INDEX IF NOT EXISTS idx_agent_versions_state ON agent_versions(agent_id,state,version);
+"""),
+("0006_identity_login_rate_limits", """
+CREATE TABLE IF NOT EXISTS identity_login_attempts(email TEXT NOT NULL,ip_hash TEXT NOT NULL,failed_count INTEGER NOT NULL,window_started_at TEXT NOT NULL,locked_until TEXT,PRIMARY KEY(email,ip_hash));
+CREATE INDEX IF NOT EXISTS idx_identity_login_lock ON identity_login_attempts(locked_until);
 """)]
 class PlatformDatabase:
  def __init__(self,path=None): self.path=Path(path) if path else _DEFAULT_PATH; self._connection=None
