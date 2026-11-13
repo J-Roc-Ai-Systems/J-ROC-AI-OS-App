@@ -12,7 +12,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import online.jrocai.phone.data.SecureSettings
+import online.jrocai.phone.data.WaveSixTenPlatformClient
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -75,15 +88,54 @@ private val waveSixTenBatches=listOf(
 
 @Composable
 fun WaveSixToTenHub(onBack:()->Unit){
+ val context= LocalContext.current
+ val scope= rememberCoroutineScope()
+ var platformStatus by remember { mutableStateOf("Not connected") }
+ var agentStatus by remember { mutableStateOf("Not loaded") }
+ var busy by remember { mutableStateOf(false) }
+ var lastError by remember { mutableStateOf("") }
+ val settings= remember(context) { SecureSettings(context) }
+ val client= remember { WaveSixTenPlatformClient() }
+ fun refresh(){
+  if(busy)return
+  busy=true
+  lastError=""
+  scope.launch {
+   try {
+    val result=withContext(Dispatchers.IO){
+     val url=settings.readGatewayUrl()
+     val token=settings.readGatewayToken()
+     val waves=client.load(url,token)
+     val agents=client.loadAgents(url,token)
+     Pair(waves,agents)
+    }
+    platformStatus="Connected • "+result.first.optInt("batch_count")+" batches registered"
+    agentStatus=result.second.optInt("count").toString()+" platform agents registered"
+   } catch(error:Exception){
+    lastError=error.message ?: "Unable to reach the J-ROC AI platform."
+    platformStatus="Connection unavailable"
+   } finally { busy=false }
+  }
+ }
  Surface(modifier=Modifier.fillMaxSize(),color=Color(0xFF0B0F14)){
   Column(modifier=Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
    Text("J-ROC AI",color=Color.White,fontSize=25.sp,fontWeight=FontWeight.Bold)
    Text("WAVES 6–10 • PLATFORM EXPANSION",color=Color(0xFF00B3FF),fontSize=11.sp,fontWeight=FontWeight.Bold)
    Button(onClick=onBack){Text("Back to Command Center")}
    Card(colors=CardDefaults.cardColors(containerColor=Color(0xFF142333)),modifier=Modifier.fillMaxWidth()){
+    Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+     Text("Live platform connection",color=Color.White,fontSize=17.sp,fontWeight=FontWeight.Bold)
+     Text(platformStatus,color=Color(0xFFAAB6C5),fontSize=12.sp)
+     Text(agentStatus,color=Color(0xFFAAB6C5),fontSize=12.sp)
+     Button(onClick={refresh()},enabled=!busy){Text(if(busy)"Connecting…" else "Refresh live platform status")}
+     if(lastError.isNotBlank()) Text(lastError,color=Color(0xFFFFC266),fontSize=12.sp)
+     Text("Uses the encrypted gateway token already stored in J-ROC AI settings. The token is never displayed here.",color=Color(0xFF8F9DAD),fontSize=11.sp)
+    }
+   }
+   Card(colors=CardDefaults.cardColors(containerColor=Color(0xFF142333)),modifier=Modifier.fillMaxWidth()){
     Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
      Text("50 batches • 500 planned build units",color=Color.White,fontSize=18.sp,fontWeight=FontWeight.Bold)
-     Text("Platform-wide service foundations. Agent jobs require registration and approval. Job registration does not mean code has executed. Zero-dollar spending policy remains active.",color=Color(0xFFAAB6C5),fontSize=12.sp)
+     Text("Platform service contracts, persistent resource records and approval-gated agent jobs. A queued job is not reported as executed until a trusted worker returns a result. Zero-dollar spending policy remains active.",color=Color(0xFFAAB6C5),fontSize=12.sp)
     }
    }
    (6..10).forEach{wave->
@@ -94,7 +146,7 @@ fun WaveSixToTenHub(onBack:()->Unit){
        Text("BATCH "+batch.number,color=Color(0xFF00B3FF),fontSize=10.sp,fontWeight=FontWeight.Bold)
        Text(batch.title,color=Color.White,fontSize=15.sp,fontWeight=FontWeight.SemiBold)
        Text(batch.scope,color=Color(0xFFAAB6C5),fontSize=12.sp)
-       Text("FOUNDATION REGISTERED • SPECIALIZED ADAPTERS PENDING",color=Color(0xFFFFC266),fontSize=10.sp,fontWeight=FontWeight.Bold)
+       Text("PLATFORM API FOUNDATION AVAILABLE",color=Color(0xFF83CFA6),fontSize=10.sp,fontWeight=FontWeight.Bold)
       }
      }
     }
