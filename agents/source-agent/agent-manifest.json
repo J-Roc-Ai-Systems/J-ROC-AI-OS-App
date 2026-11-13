@@ -1,0 +1,36 @@
+{
+  "agent_id": "jrocai.source",
+  "display_name": "J-ROC AI Source Agent",
+  "version": "1.0.0",
+  "status": "foundation",
+  "owner": "J-ROC AI",
+  "mission": "Discover, retrieve, validate, deduplicate, and document authorized source materials.",
+  "capabilities": [
+    "source_discovery",
+    "source_metadata_capture",
+    "version_and_checksum_tracking",
+    "license_and_compatibility_review",
+    "duplicate_detection",
+    "audit_logging",
+    "human_review_routing"
+  ],
+  "permissions": {
+    "read": ["approved_local_sources", "authorized_repositories", "public_documentation", "approved_package_registries"],
+    "write": ["source_catalog_records", "source_audit_records", "approved_new_source_files"],
+    "restricted": ["dependency_import", "production_source_replacement", "repository_secret_access", "release_publication", "pull_request_merge"]
+  },
+  "secret_policy": {
+    "owner": "J-ROC AI Environment Agent",
+    "allow_agent_secret_storage": false,
+    "allow_apk_provider_keys": false,
+    "allow_secrets_in_logs": false
+  },
+  "approval_gates": [
+    "dependency_import",
+    "production_source_replacement",
+    "license_review_required",
+    "private_repository_access"
+  ],
+  "audit_required": true,
+  "untrusted_code_execution_during_discovery": false
+}
