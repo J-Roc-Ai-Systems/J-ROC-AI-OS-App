@@ -5,6 +5,7 @@ This document records the operational contracts delivered for batches 51–100. 
 ## Wave 6 — Agent workforce and source intelligence (51–60)
 - Platform-wide agent registry and fourteen default specialist agents, including the permanent Source Agent.
 - Structured source review, repository inspection, source search, change proposal, build verification, test execution, documentation review, dependency audit, security review, repair diagnostics, compatibility review, Academy review, website brand validation, local model discovery, and release validation job types.
+- Permanent read-only GitHub Source Agent endpoints for repository metadata, recursive tree inspection and bounded UTF-8 file reads. It uses an optional Env Agent-held GitHub read token; it exposes no write operation and never returns the token.
 - Explicit approval before dispatch; dispatch creates a bounded durable worker queue job.
 - Worker capabilities must include agent:<agent-id>. Workers authenticate with their one-time-issued worker credential and use leases, heartbeats, retries, and completion reporting from the existing worker service.
 - The agent queue does not execute shell commands or arbitrary code.
@@ -41,6 +42,10 @@ All endpoints below require the platform gateway bearer token.
 - GET /platform/v1/wave-resources/{resource_type} and GET /platform/v1/wave-resources/{resource_type}/{resource_id} — read resources.
 - PATCH /platform/v1/wave-resources/{resource_type}/{resource_id}/state — governed lifecycle transitions.
 - GET /platform/v1/environment/readiness — configuration presence only, never secret values.
+- GET /platform/v1/source-agent/status — Source Agent read-only capability status.
+- GET /platform/v1/source-agent/repositories/{owner}/{repo} — repository metadata.
+- GET /platform/v1/source-agent/repositories/{owner}/{repo}/tree — bounded repository tree inventory.
+- GET /platform/v1/source-agent/repositories/{owner}/{repo}/files — bounded UTF-8 source file read.
 
 ## Resource type catalogue
 Agent profiles; source reviews; repository snapshots; change proposals; build requests; test runs; documentation reviews; agent delegations; agent knowledge; agent evaluations; software development kit releases; application projects; website projects; workflow definitions; interface components; integrations; application programming interface versions; developer workspaces; dependency reviews; release plans; operating system services; device enrollments; local models; model routes; accessibility profiles; file indexes; system diagnostics; network profiles; backup manifests; privacy consents; organizations; role assignments; identity providers; security findings; threat indicators; vulnerability findings; compliance controls; data policies; service incidents; recovery plans; marketplace extensions; extension reviews; entitlements; billing entries; partners; onboarding records; attribution events; customer health; export requests; certification reviews.
@@ -49,6 +54,7 @@ Agent profiles; source reviews; repository snapshots; change proposals; build re
 - Gateway authentication is required for all Wave 6–10 API routes.
 - Worker dispatch is only possible after explicit approval and uses the existing worker authentication, capability check, lease and retry system.
 - Agent job types are allowlisted; arbitrary shell and code execution, device unlocking, firmware writes, security bypass, payment capture and secret export are denied.
+- Every one of the fifty resource types has a required-field contract; workflow steps, severities, retention, health scores, ledger amounts, consent booleans, local runtimes, extension manifests and currency codes receive type or allowlist validation.
 - Sensitive fields are recursively redacted from resource data.
 - Device enrollment requires owner confirmation.
 - Local model runtime records must be local.
