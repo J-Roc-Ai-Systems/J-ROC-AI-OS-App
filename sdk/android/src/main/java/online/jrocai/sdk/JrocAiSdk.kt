@@ -45,6 +45,20 @@ class JrocAiSdk(
     private fun encodePath(value: String): String =
         java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
+    fun getTask(taskId: String, callback: SdkCallback<JSONObject>) {
+        request("GET", "/v1/tasks/${encodePath(taskId)}", null, callback)
+    }
+
+    fun approveTask(
+        taskId: String,
+        approved: Boolean,
+        actor: String = "platform-owner",
+        callback: SdkCallback<JSONObject>
+    ) {
+        val body = JSONObject().put("approved", approved).put("actor", actor)
+        request("POST", "/v1/tasks/${encodePath(taskId)}/approve", body, callback)
+    }
+
     fun submitSourceTask(
         agentId: String,
         taskType: String,
