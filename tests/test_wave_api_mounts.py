@@ -7,7 +7,7 @@ from app import app
 
 class WaveApiMountTests(unittest.TestCase):
     def test_wave_catalog_and_domain_routes_are_mounted(self):
-        paths={route.path for route in app.routes}
+        paths=set(app.openapi()["paths"].keys())
         self.assertIn("/platform/v1/waves",paths)
         self.assertIn("/platform/v1/domain/catalog",paths)
         self.assertIn("/platform/v1/domain/{domain}/records",paths)
