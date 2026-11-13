@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="J-ROC AI Env Agent", version="0.3.0")
 from platform_core.api import router as platform_router
 app.include_router(platform_router)
+from platform_core.wave345 import router as waves_three_to_five_router
+app.include_router(waves_three_to_five_router)
 
 @app.on_event("startup")
 def register_wave_two_services():
