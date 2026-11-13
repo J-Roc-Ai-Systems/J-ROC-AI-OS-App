@@ -10,42 +10,50 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** Encrypts the user-supplied API key with an Android Keystore AES key. */
+/** Stores only the user's gateway access token locally. Provider keys remain server-side. */
 class SecureSettings(context: Context) {
     private val prefs = context.getSharedPreferences("jrocai_secure_settings", Context.MODE_PRIVATE)
-    private val alias = "jrocai_local_settings_key"
+    private val alias = "jrocai_gateway_token_key"
 
-    fun saveApiKey(value: String) {
+    fun saveGatewayToken(value: String) = saveEncrypted("gateway_token", value)
+    fun readGatewayToken(): String = readEncrypted("gateway_token")
+
+    fun saveGatewayUrl(value: String) {
+        prefs.edit().putString("gateway_url", value.trim().trimEnd('/')).apply()
+    }
+    fun readGatewayUrl(): String = prefs.getString("gateway_url", "https://YOUR-API-HOST.example.com") ?: ""
+
+    fun saveModel(model: String) {
+        prefs.edit().putString("model", model.trim()).apply()
+    }
+    fun readModel(): String = prefs.getString("model", "gpt-4.1-mini") ?: "gpt-4.1-mini"
+
+    private fun saveEncrypted(name: String, value: String) {
         if (value.isBlank()) {
-            prefs.edit().remove("api_key").apply()
+            prefs.edit().remove(name).apply()
             return
         }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
         val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
-        val packed = cipher.iv + encrypted
-        prefs.edit().putString("api_key", Base64.encodeToString(packed, Base64.NO_WRAP)).apply()
+        prefs.edit().putString(name, Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP)).apply()
     }
 
-    fun readApiKey(): String {
-        val packed = prefs.getString("api_key", null) ?: return ""
+    private fun readEncrypted(name: String): String {
+        val packed = prefs.getString(name, null) ?: return ""
         return try {
             val bytes = Base64.decode(packed, Base64.NO_WRAP)
-            val iv = bytes.copyOfRange(0, 12)
-            val ciphertext = bytes.copyOfRange(12, bytes.size)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
-            String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                getOrCreateKey(),
+                GCMParameterSpec(128, bytes.copyOfRange(0, 12))
+            )
+            String(cipher.doFinal(bytes.copyOfRange(12, bytes.size)), Charsets.UTF_8)
         } catch (_: Exception) {
             ""
         }
     }
-
-    fun saveModel(model: String) {
-        prefs.edit().putString("model", model.trim()).apply()
-    }
-
-    fun readModel(): String = prefs.getString("model", "gpt-4.1-mini") ?: "gpt-4.1-mini"
 
     private fun getOrCreateKey(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
