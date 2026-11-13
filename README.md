@@ -13,7 +13,13 @@ First-party Android application codebase for the J-ROC AI phone experience.
 7. **J-ROC AI Account** — account registration and sign-in with an encrypted local session token.
 8. **J-ROC AI Settings** — local privacy, gateway-token removal, and history controls.
 9. **Personal Memory** — user-controlled account notes with encrypted local session storage.
-10. **Ten-Wave Platform Hub** — live Environment Agent service-registry connection and the 100-batch roadmap.
+10. **Knowledge Center** — add knowledge sources and search the indexed platform store.
+11. **Secure Files** — account-owned encrypted upload, listing and deletion.
+12. **Agent Factory** — create, version, publish and disable permission-bounded agents.
+13. **Application Factory** — register projects, build recipes and approval-gated build requests.
+14. **Enterprise Operations** — create organizations and submit fleet enrollment requests.
+15. **Release Management** — manage release channels, approvals and distribution readiness.
+16. **Ten-Wave Platform Hub** — live Environment Agent service-registry connection and the 100-batch roadmap.
 
 ## Security architecture: Env Agent
 
@@ -74,4 +80,4 @@ Android app: 0.2.0
 
 ## Ten-wave build register
 
-See [WAVE_BUILD_PLAN.md](WAVE_BUILD_PLAN.md) for the ten-wave, 100-batch implementation register and honest completion criteria. The current backend includes foundations for account identity, local model routing, repair diagnostics, workflow state, approval-gated build jobs, encrypted user files, enterprise fleet registries and release approvals. These foundations are not a claim that every wave is complete or production-ready.
+See [WAVE_BUILD_PLAN.md](WAVE_BUILD_PLAN.md) for the ten-wave, 100-batch implementation register and honest completion criteria. See [RELEASE_SECURITY.md](RELEASE_SECURITY.md) for protected Android release signing requirements. The current backend includes foundations for account identity, local model routing, repair diagnostics, workflow state, approval-gated build jobs, encrypted user files, enterprise fleet registries and release approvals. These foundations are not a claim that every wave is complete or production-ready.
