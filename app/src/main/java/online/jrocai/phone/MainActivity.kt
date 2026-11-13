@@ -59,7 +59,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Model Center",
-    "Conversations", "Device Tools", "Account", "Settings", "Wave 2"
+    "Conversations", "Device Tools", "Account", "Settings", "Platform Hub"
 )
 
 class MainActivity : ComponentActivity() {
@@ -143,7 +143,7 @@ private fun JrocPhoneApp(
                     messages.clear()
                 })
                 "Device Tools" -> DeviceTools()
-                "Wave 2" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
+                "Platform Hub" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
                 "Account" -> AccountScreen(settings = secureSettings, client = IdentityClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
@@ -179,7 +179,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Device Tools", "Review Android version, hardware and build details.", "Inspect Device") { onOpen("Device Tools") }
         ModuleCard("Account", "Register or sign in using a protected account session.", "Open Account") { onOpen("Account") }
         ModuleCard("J-ROC AI Settings", "Manage privacy, local credentials and preferences.", "Open Settings") { onOpen("Settings") }
-        ModuleCard("Wave 2 Production Platform", "Open the ten intelligence and production infrastructure areas.", "Open Wave 2") { onOpen("Wave 2") }
+        ModuleCard("Ten-Wave Platform Hub", "Open the complete ten-wave, 100-batch development workspace.", "Open Platform Hub") { onOpen("Platform Hub") }
         Text("J-ROC AI • Local-first phone workspace", color = Muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
