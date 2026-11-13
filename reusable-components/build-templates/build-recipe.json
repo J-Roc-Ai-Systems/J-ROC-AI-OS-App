@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "recipe_id": "android.debug",
+  "name": "Android debug build",
+  "platform": "android",
+  "required_capability": "build.execute",
+  "working_directory": "workspace/project",
+  "build_command": [
+    "gradle",
+    ":app:assembleDebug"
+  ],
+  "approval_required": true,
+  "sandbox_required": true,
+  "network_access": "deny_by_default",
+  "secrets": "Environment Agent references only"
+}
