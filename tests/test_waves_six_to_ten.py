@@ -21,7 +21,7 @@ class WaveSixTenTests(unittest.TestCase):
   result=m.decide_agent_job(job["job_id"],JobDecision(decision="approve",reason="Approved for inspection"))
   self.assertEqual("approved_queued",result["state"])
  def test_unregistered_agent_denied(self):
-  with self.assertRaises(Exception):m.create_agent_job(AgentJobCreate(job_type="docs.review",title="Review docs",objective="Review platform documentation",batch=57,agent_id="missing"))
+  with self.assertRaises(Exception):m.create_agent_job(AgentJobCreate(job_type="documentation.review",title="Review docs",objective="Review platform documentation",batch=57,agent_id="missing"))
  def test_unsafe_path_denied(self):
   m.register_agent(AgentRegistration(agent_id="test-agent",display_name="Test Agent"))
   with self.assertRaises(Exception):m.create_agent_job(AgentJobCreate(job_type="test.run",title="Run tests",objective="Run the repository test suite",batch=56,agent_id="test-agent",file_scope=["../../secrets.env"]))
