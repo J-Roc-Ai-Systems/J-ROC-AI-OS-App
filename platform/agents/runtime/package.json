@@ -1,0 +1,14 @@
+{
+  "name": "@jrocai/platform-agent-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Host-neutral J-ROC AI platform agent registry, policy, dispatch, and HTTP gateway.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test ./test/*.test.mjs",
+    "check": "node --check ./agent-registry.mjs && node --check ./policy-engine.mjs && node --check ./agent-runtime.mjs && node --check ./http-gateway.mjs && node --check ./source-agent.mjs && node --check ./file-audit-store.mjs"
+  }
+}
