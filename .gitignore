@@ -19,3 +19,9 @@ backend/env-agent/workspace/
 *.sqlite
 *.sqlite3
 *.db
+
+# Signing credentials and private key material
+*.p12
+*.pfx
+*.key
+*.mobileprovision
