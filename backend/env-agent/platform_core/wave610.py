@@ -17,6 +17,7 @@ WAVES=[
 ]
 BATCHES={b[0]:{"batch":b[0],"name":b[1],"wave":w["wave"],"wave_name":w["name"]} for w in WAVES for b in w["batches"]}
 BLOCKED=("arbitrary_code","firmware_write","device_unlock","security_bypass","payment_capture","secret_export","shell_command")
+ALLOWED_AGENT_JOB_TYPES={"repository.review","repository.inspect","source.search","change.propose","build.verify","tests.run","documentation.review","dependency.audit","security.review","repair.diagnostics","device.compatibility","academy.course.review","website.brand.validate","model.local.discover","release.validate"}
 
 class AgentRegistration(BaseModel):
  model_config=ConfigDict(extra="forbid")
@@ -77,6 +78,7 @@ def list_agents():
 def create_agent_job(item:AgentJobCreate):
  _ensure()
  if item.batch not in BATCHES:raise HTTPException(400,"Unknown batch.")
+ if item.job_type not in ALLOWED_AGENT_JOB_TYPES:raise HTTPException(403,"Agent job type is not on the platform allowlist.")
  if any(term in (item.job_type+" "+item.objective).lower() for term in BLOCKED):raise HTTPException(403,"Operation is outside the approved agent boundary.")
  if not db.one("SELECT agent_id FROM platform_agent_registry WHERE agent_id=? AND status='registered'",(item.agent_id,)):raise HTTPException(404,"Registered agent required.")
  if item.repository and (len(item.repository.split("/"))!=2 or ".." in item.repository):raise HTTPException(422,"Repository must use owner/repository format.")
@@ -235,7 +237,7 @@ def dispatch_approved_agent_job(job_id:str):
  if row.get("worker_job_id"):raise HTTPException(409,"Agent job was already dispatched.")
  payload={"agent_job_id":job_id,"agent_id":row["agent_id"],"batch":row["batch"],"job_type":row["job_type"],"title":row["title"],"objective":row["objective"],"repository":row["repository"],"file_scope":db.decode(row["file_scope"],[]),"execution_contract":"structured_task_only_no_arbitrary_shell"}
  queued=workers.submit(JobSubmission(job_type="agent.structured_task",payload=payload,priority=5,required_capability="agent:"+row["agent_id"],max_attempts=2))
- db.execute("UPDATE platform_agent_jobs SET worker_job_id=?,updated_at=? WHERE job_id=?",(queued["job_id"],utc_now(),job_id))
+ db.execute("UPDATE platform_agent_jobs SET worker_job_id=?,state=?,updated_at=? WHERE job_id=?",(queued["job_id"],"dispatched",utc_now(),job_id))
  audit("agent_job.dispatch","agent_job",job_id,queued["job_id"])
  return {"agent_job_id":job_id,"worker_job_id":queued["job_id"],"worker_queue_state":queued["state"],"required_worker_capability":"agent:"+row["agent_id"]}
 
