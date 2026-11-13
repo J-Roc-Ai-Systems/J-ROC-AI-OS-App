@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS worker_credentials (
     revoked_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_worker_credentials_active ON worker_credentials(worker_id, revoked_at);
+ALTER TABLE jobs ADD COLUMN lease_expires_at TEXT;
 CREATE INDEX IF NOT EXISTS idx_jobs_lease ON jobs(state, lease_expires_at);
 """),
 ]
@@ -67,13 +68,8 @@ class PlatformDatabase:
         for migration_id, script in MIGRATIONS:
             if migration_id in applied:
                 continue
-            connection.execute("BEGIN IMMEDIATE")
             try:
-                connection.executescript(script)
-                if migration_id == "0002_worker_identity_and_leases":
-                    columns = {row[1] for row in connection.execute("PRAGMA table_info(jobs)")}
-                    if "lease_expires_at" not in columns:
-                        connection.execute("ALTER TABLE jobs ADD COLUMN lease_expires_at TEXT")
+                connection.executescript("BEGIN IMMEDIATE;\\n" + script)
                 connection.execute("INSERT INTO schema_migrations(migration_id,applied_at) VALUES(?,?)",
                     (migration_id, datetime.now(timezone.utc).isoformat()))
                 connection.execute("COMMIT")
