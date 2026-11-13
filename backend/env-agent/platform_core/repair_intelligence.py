@@ -33,6 +33,8 @@ def read_session(session_id):
  return row
 @router.post("/profiles")
 def add_profile(p:Profile):
+ if not p.supported_methods or any(method not in {"usb","wireless","local-only"} for method in p.supported_methods):
+  raise HTTPException(422,"Repair profiles may use only USB, wireless or local-only diagnostic methods.")
  now=utc_now()
  db.execute("""INSERT INTO repair_profiles(profile_id,manufacturer,model,operating_system,supported_methods,safety_notes,source_reference,created_at,updated_at)
  VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(profile_id) DO UPDATE SET manufacturer=excluded.manufacturer,model=excluded.model,
