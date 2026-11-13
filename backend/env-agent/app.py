@@ -17,6 +17,10 @@ from platform_core.identity import router as identity_router, admin_router as id
 from platform_core.workflow_engine import router as workflow_router
 from platform_core.local_model_router import router as local_model_router
 from platform_core.repair_intelligence import router as repair_router
+from platform_core.build_factory import router as build_factory_router
+from platform_core.secure_storage import router as secure_storage_router
+from platform_core.enterprise import router as enterprise_router
+from platform_core.release_management import router as release_router
 
 app.include_router(platform_router)
 app.include_router(worker_router)
@@ -25,6 +29,10 @@ app.include_router(identity_admin_router)
 app.include_router(workflow_router)
 app.include_router(local_model_router)
 app.include_router(repair_router)
+app.include_router(build_factory_router)
+app.include_router(secure_storage_router)
+app.include_router(enterprise_router)
+app.include_router(release_router)
 
 
 @app.on_event("startup")
@@ -46,7 +54,11 @@ def register_wave_two_services():
         ("local-model-router", "Local Model Router", ["loopback-discovery", "local-inference"]),
         ("repair-intelligence", "Repair Intelligence", ["compatibility-profiles", "diagnostic-sessions"]),
         ("security-governance", "Security Governance", ["audit", "secret-boundary"]),
-        ("release-management", "Release Management", ["version-registry", "approval-gates"])
+        ("release-management", "Release Management", ["version-registry", "approval-gates"]),
+        ("build-factory", "Build Factory", ["recipe-registry", "approval-gated-build-jobs"]),
+        ("encrypted-file-storage", "Encrypted File Storage", ["authenticated-upload", "authenticated-download"]),
+        ("enterprise-operations", "Enterprise Operations", ["organizations", "fleet-enrollment", "device-policies"]),
+        ("release-channels", "Release Channels", ["release-registry", "approval-and-publish-state"])
     ]
     for service_id, display_name, capabilities in services:
         events.register_service(service_id, display_name, "0.2.0", capabilities)
