@@ -34,6 +34,10 @@ class WaveSixTenTests(unittest.TestCase):
   m.decide_agent_job(j["job_id"],JobDecision(decision="reject",reason="Needs more evidence"))
   with self.assertRaises(Exception):m.decide_agent_job(j["job_id"],JobDecision(decision="approve",reason="Late approval"))
 
+ def test_every_wave_resource_has_a_typed_contract(self):
+  self.assertEqual(set(m.RESOURCE_TYPES),set(m.RESOURCE_REQUIRED))
+ def test_workflow_steps_are_allowlisted(self):
+  with self.assertRaises(Exception):m.create_wave_resource("workflow_definitions",ResourceCreate(title="Unsafe workflow",data={"steps":[{"type":"shell","command":"not allowed"}]}))
  def test_domain_resource_contract_validation(self):
   with self.assertRaises(Exception):
    m.create_wave_resource("source_reviews",ResourceCreate(title="Missing repository",data={"notes":"not enough"}))
