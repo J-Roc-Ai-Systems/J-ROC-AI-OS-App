@@ -50,6 +50,7 @@ import online.jrocai.phone.data.SecureSettings
 import online.jrocai.phone.data.PlatformOperationsClient
 import online.jrocai.phone.data.IdentityClient
 import online.jrocai.phone.data.MemoryClient
+import online.jrocai.phone.data.RepairClient
 import java.text.DateFormat
 import java.util.Date
 
@@ -59,7 +60,7 @@ private val Panel = Color(0xFF151C25)
 private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
-    "Command Center", "AI Assistant", "J-Bot", "Model Center",
+    "Command Center", "AI Assistant", "J-Bot", "Repair", "Model Center",
     "Conversations", "Device Tools", "Account", "Memory", "Settings", "Platform Hub"
 )
 
@@ -144,6 +145,7 @@ private fun JrocPhoneApp(
                     messages.clear()
                 })
                 "Device Tools" -> DeviceTools()
+                "Repair" -> RepairScreen(settings = secureSettings, client = RepairClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Platform Hub" -> PlatformHub(onBack = { selected = "Command Center" }, settings = secureSettings, operations = PlatformOperationsClient(), runOnMain = runOnMain)
                 "Account" -> AccountScreen(settings = secureSettings, client = IdentityClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
                 "Memory" -> MemoryScreen(settings = secureSettings, client = MemoryClient(), onBack = { selected = "Command Center" }, runOnMain = runOnMain)
@@ -176,6 +178,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         }
         ModuleCard("J-ROC AI Assistant", "Chat with your connected AI assistant.", "Open Assistant") { onOpen("AI Assistant") }
         ModuleCard("J-Bot", "Guided phone, tablet and computer troubleshooting.", "Open J-Bot") { onOpen("J-Bot") }
+        ModuleCard("Repair Workspace", "Create and track non-invasive USB and wireless diagnostic sessions.", "Open Repair Workspace") { onOpen("Repair") }
         ModuleCard("Model Center", "Connect the Env Agent and select an available model.", "Manage Models") { onOpen("Model Center") }
         ModuleCard("Conversations", "Browse and clear locally saved chat history.", "View History") { onOpen("Conversations") }
         ModuleCard("Device Tools", "Review Android version, hardware and build details.", "Inspect Device") { onOpen("Device Tools") }
