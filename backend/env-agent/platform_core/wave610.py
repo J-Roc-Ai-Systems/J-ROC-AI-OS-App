@@ -86,7 +86,7 @@ def create_agent_job(item:AgentJobCreate):
   if p.startswith("/") or ".." in p.split("/") or len(p)>240:raise HTTPException(422,"Unsafe file scope.")
   scope.append(p)
  jid=str(uuid.uuid4()); now=utc_now(); state="awaiting_approval" if item.approval_required else "queued"
- db.execute("INSERT INTO platform_agent_jobs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(jid,item.job_type,item.title,item.objective,item.batch,item.agent_id,item.repository,db.encode(scope),state,int(item.approval_required),None,now,now))
+ db.execute("INSERT INTO platform_agent_jobs(job_id,job_type,title,objective,batch,agent_id,repository,file_scope,state,approval_required,decision_reason,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(jid,item.job_type,item.title,item.objective,item.batch,item.agent_id,item.repository,db.encode(scope),state,int(item.approval_required),None,now,now))
  audit("agent_job.create","agent_job",jid,item.agent_id)
  return _job(db.one("SELECT * FROM platform_agent_jobs WHERE job_id=?",(jid,)))
 
