@@ -10,10 +10,10 @@ Ten waves × ten implementation batches = 100 batches. Existing Android and back
 | 4 | Model center, local routing, memory and provider policy | 31–40 | Local-only model adapter added; Android integration open |
 | 5 | J-Bot repair intelligence, profiles, diagnostics and safety | 41–50 | Repair profile and session foundation added |
 | 6 | Agent factory, worker lifecycle, task orchestration and workflows | 51–60 | Workflow definitions and run state added; worker dispatch open |
-| 7 | Application factory, project workspaces and build pipelines | 61–70 | Project registry exists; build pipeline open |
-| 8 | Knowledge, secure files, communications and synchronization | 71–80 | Search, notification and file metadata foundations exist |
-| 9 | Enterprise, fleet, integrations, monitoring, quotas and policy | 81–90 | Registries exist; enterprise enforcement open |
-| 10 | Release engineering, packaging, updates, recovery and final quality | 91–100 | Not started |
+| 7 | Application factory, project workspaces and build pipelines | 61–70 | Approval-gated recipe and worker-job orchestration foundation added; isolated build execution open |
+| 8 | Knowledge, secure files, communications and synchronization | 71–80 | Authenticated AES-GCM encrypted file upload/download foundation added; account sync and quotas open |
+| 9 | Enterprise, fleet, integrations, monitoring, quotas and policy | 81–90 | Organization, membership, fleet enrollment and device-policy registries added; enforcement and monitoring open |
+| 10 | Release engineering, packaging, updates, recovery and final quality | 91–100 | Release channels, approval records and distribution-ready state registry added; deployment and rollback open |
 
 ## Batch register
 
@@ -47,6 +47,6 @@ Ten waves × ten implementation batches = 100 batches. Existing Android and back
 ### Wave 10 — Release and quality
 91 Versioned release channels. 92 Protected Android signing. 93 Backend deployment manifests. 94 Update and rollback. 95 Database backup and restore. 96 Dependency and software bill of materials. 97 Security/privacy review. 98 Full test suites. 99 End-to-end, performance and recovery validation. 100 Release candidate and operator runbook.
 
-## Acceptance rule
+## Current implementation increment\n\nThe backend now includes identity/session routes, a loopback-only local model adapter, repair profiles and diagnostic sessions, workflow definitions and run state, approval-gated build recipes and queued worker jobs, AES-GCM encrypted per-user file storage, organization/member/fleet registries, device policy records, and release channel/approval state. These are service foundations. Android account/file/factory screens, true worker sandboxing, actual build execution, enterprise authorization enforcement, production rate limits, account recovery, artifact verification, deployment, and rollback remain open.\n\n## Acceptance rule
 
 A batch is complete only when implementation exists, is integrated, documented and source-inspected. A wave is not production-ready until consolidated tests and builds pass. Plans, empty screens and placeholder services are not completion evidence.
