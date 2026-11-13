@@ -9,6 +9,6 @@
   },
   "scripts": {
     "test": "node --test ./test/*.test.mjs",
-    "check": "node --check ./agent-registry.mjs && node --check ./policy-engine.mjs && node --check ./agent-runtime.mjs && node --check ./http-gateway.mjs && node --check ./source-agent.mjs && node --check ./file-audit-store.mjs"
+    "check": "node --check ./agent-registry.mjs && node --check ./policy-engine.mjs && node --check ./agent-runtime.mjs && node --check ./http-gateway.mjs && node --check ./source-agent.mjs && node --check ./file-audit-store.mjs && node --check ./postgres-adapters.mjs"
   }
 }
