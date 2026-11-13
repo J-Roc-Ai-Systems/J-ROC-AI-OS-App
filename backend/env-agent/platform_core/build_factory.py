@@ -56,7 +56,7 @@ def approve_run(run_id:str):
  recipe=read_recipe(run["recipe_id"])
  job=workers.submit(JobSubmission(job_type="build.execute",payload={"build_run_id":run_id,"project_id":run["project_id"],
   "recipe_id":run["recipe_id"],"source_revision":run["source_revision"],"parameters":run["parameters"],
-  "build_command":db.decode(recipe["build_command"],[]),"working_directory":recipe["working_directory"]},
+  "required_capability":recipe["required_capability"]},
   priority=7,required_capability=recipe["required_capability"]))
  now=utc_now()
  db.execute("UPDATE build_runs SET state='queued',job_id=?,updated_at=? WHERE run_id=?",(job["job_id"],now,run_id))
