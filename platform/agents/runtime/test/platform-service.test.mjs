@@ -22,6 +22,10 @@ test("platform service composes the shared registry and host-neutral gateway", a
     dependencyHealth: { async isHealthy() { return false; } }
   });
   assert.equal(service.registry.size, 41);
+  const listedAgents = service.registry.list();
+  assert.equal(listedAgents.length, 41);
+  assert.equal(listedAgents.filter((agent) => agent.lifecycleState === "registered").length, 1);
+  assert.equal(service.registry.getAgent("jrocai.source").lifecycleState, "registered");
   assert.equal(service.registry.list({ availableOnly: true }).length, 0);
   assert.equal(service.httpServer.listening, false);
   assert.ok(service.worker);
