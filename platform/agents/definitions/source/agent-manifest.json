@@ -1,0 +1,86 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.source",
+  "displayName": "Source Agent",
+  "version": "1.0.0",
+  "description": "discover, inspect, classify, verify provenance and license of code and information sources",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "registered",
+  "domains": [
+    "engineering"
+  ],
+  "capabilities": [
+    {
+      "id": "source.discover",
+      "description": "Discover authorized source candidates and provenance",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "source.read-authorized-private",
+      "description": "Read explicitly authorized private repositories",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "source.discover",
+      "source.read-authorized-private"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": [
+      "platform/agents/runtime/test/source-agent.test.mjs"
+    ]
+  }
+}

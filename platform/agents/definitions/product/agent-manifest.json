@@ -1,0 +1,84 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.product",
+  "displayName": "Product Management Agent",
+  "version": "1.0.0",
+  "description": "requirements, user stories, product scope and release priorities",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "product"
+  ],
+  "capabilities": [
+    {
+      "id": "product.prepare",
+      "description": "Prepare recommendations and plans for: requirements, user stories, product scope and release priorities",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "product.execute",
+      "description": "Execute the approved operation for: requirements, user stories, product scope and release priorities",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "product.prepare",
+      "product.execute"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}

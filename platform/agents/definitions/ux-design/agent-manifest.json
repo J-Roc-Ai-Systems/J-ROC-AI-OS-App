@@ -1,0 +1,84 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.ux-design",
+  "displayName": "User Experience Design Agent",
+  "version": "1.0.0",
+  "description": "interaction design, information architecture and design systems",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "product"
+  ],
+  "capabilities": [
+    {
+      "id": "ux-design.prepare",
+      "description": "Prepare recommendations and plans for: interaction design, information architecture and design systems",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "ux-design.execute",
+      "description": "Execute the approved operation for: interaction design, information architecture and design systems",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "ux-design.prepare",
+      "ux-design.execute"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}

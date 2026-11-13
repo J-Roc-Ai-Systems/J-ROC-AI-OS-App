@@ -1,0 +1,84 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.knowledge",
+  "displayName": "Knowledge and Memory Agent",
+  "version": "1.0.0",
+  "description": "approved knowledge ingestion, indexing, retrieval and lifecycle controls",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "knowledge"
+  ],
+  "capabilities": [
+    {
+      "id": "knowledge.prepare",
+      "description": "Prepare recommendations and plans for: approved knowledge ingestion, indexing, retrieval and lifecycle controls",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "knowledge.execute",
+      "description": "Execute the approved operation for: approved knowledge ingestion, indexing, retrieval and lifecycle controls",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "knowledge.prepare",
+      "knowledge.execute"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}

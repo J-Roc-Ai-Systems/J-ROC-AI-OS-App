@@ -1,0 +1,84 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.device-fleet",
+  "displayName": "Device Fleet Management Agent",
+  "version": "1.0.0",
+  "description": "authorized device enrollment, inventory, staged updates and fleet status",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "specialized"
+  ],
+  "capabilities": [
+    {
+      "id": "fleet.inventory-read",
+      "description": "Read authorized device inventory and status",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "fleet.stage-update",
+      "description": "Stage device or firmware updates with approval",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "fleet.inventory-read",
+      "fleet.stage-update"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}

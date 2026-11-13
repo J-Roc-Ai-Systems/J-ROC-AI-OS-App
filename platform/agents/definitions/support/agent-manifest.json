@@ -1,0 +1,84 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.support",
+  "displayName": "Customer Support Agent",
+  "version": "1.0.0",
+  "description": "support triage, issue classification and knowledge-backed assistance",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "operations"
+  ],
+  "capabilities": [
+    {
+      "id": "support.prepare",
+      "description": "Prepare recommendations and plans for: support triage, issue classification and knowledge-backed assistance",
+      "risk": "low",
+      "requiresApproval": false
+    },
+    {
+      "id": "support.execute",
+      "description": "Execute the approved operation for: support triage, issue classification and knowledge-backed assistance",
+      "risk": "high",
+      "requiresApproval": true
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "capabilities": [
+      "support.prepare",
+      "support.execute"
+    ],
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": [
+      "tenant"
+    ]
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action",
+      "permission-change",
+      "private-repository-access"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "status": "pending",
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "status": "pending",
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}
