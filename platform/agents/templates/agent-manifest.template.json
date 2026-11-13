@@ -1,0 +1,67 @@
+{
+  "manifestVersion": "1.0.0",
+  "agentId": "jrocai.example-agent",
+  "displayName": "Example J-ROC AI Agent",
+  "version": "1.0.0",
+  "description": "Replace with a concise description of the agent's responsibility.",
+  "scope": "platform-wide",
+  "owner": "J-ROC AI Platform",
+  "lifecycleState": "specified",
+  "domains": [
+    "platform"
+  ],
+  "capabilities": [
+    {
+      "id": "example.read",
+      "description": "A narrowly scoped capability.",
+      "risk": "low"
+    }
+  ],
+  "supportedHosts": [
+    "android",
+    "windows",
+    "linux",
+    "web",
+    "cloud"
+  ],
+  "permissions": {
+    "filesystem": [],
+    "network": [],
+    "repositories": [],
+    "dataScopes": []
+  },
+  "dependencies": {
+    "agents": [],
+    "services": []
+  },
+  "secrets": {
+    "environmentAgentManaged": true,
+    "secretReferences": []
+  },
+  "approvalGates": {
+    "humanApprovalRequiredFor": [
+      "external-write",
+      "production-change",
+      "financial-action",
+      "destructive-action"
+    ],
+    "standingAuthorizationAllowed": false
+  },
+  "audit": {
+    "required": true,
+    "redactSecrets": true
+  },
+  "execution": {
+    "mayExecuteUntrustedCode": false,
+    "timeoutSeconds": 60,
+    "retryLimit": 1
+  },
+  "health": {
+    "readinessCheck": "not-implemented",
+    "lastVerifiedAt": null
+  },
+  "tests": {
+    "requiredBeforeAvailable": true,
+    "testPaths": []
+  }
+}
