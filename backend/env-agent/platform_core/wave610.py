@@ -92,6 +92,14 @@ def create_agent_job(item:AgentJobCreate):
  audit("agent_job.create","agent_job",jid,item.agent_id)
  return _job(db.one("SELECT * FROM platform_agent_jobs WHERE job_id=?",(jid,)))
 
+@router.get("/agent-jobs/{job_id}")
+def get_agent_job(job_id:str):
+ _ensure()
+ row=_job(db.one("SELECT * FROM platform_agent_jobs WHERE job_id=?",(job_id,)))
+ if not row:raise HTTPException(404,"Agent job not found.")
+ row["worker_job"] = workers.get_job(row["worker_job_id"]) if row.get("worker_job_id") else None
+ return row
+
 @router.get("/agent-jobs")
 def list_agent_jobs(state:str|None=None,limit:int=Query(default=100,ge=1,le=500)):
  _ensure()
