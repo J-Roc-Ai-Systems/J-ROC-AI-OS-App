@@ -17,6 +17,9 @@ class SecureSettings(context: Context) {
 
     fun saveGatewayToken(value: String) = saveEncrypted("gateway_token", value)
     fun readGatewayToken(): String = readEncrypted("gateway_token")
+    fun saveIdentityToken(value: String) = saveEncrypted("identity_session_token", value)
+    fun readIdentityToken(): String = readEncrypted("identity_session_token")
+    fun clearIdentityToken() = saveEncrypted("identity_session_token", "")
 
     fun saveGatewayUrl(value: String) {
         prefs.edit().putString("gateway_url", value.trim().trimEnd('/')).apply()
