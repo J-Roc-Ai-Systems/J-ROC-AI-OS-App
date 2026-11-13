@@ -123,6 +123,26 @@ def make_handler(store,expected_token):
             if path=="/v1/agents":
                 self.send_json(200,{"agents":AGENTS})
                 return
+            if path.startswith("/v1/repositories/"):
+                parts=path.strip("/").split("/")
+                if len(parts) not in (4,5) or (len(parts)==5 and parts[4]!="file"):
+                    self.send_json(400,{"error":"invalid_repository_path"})
+                    return
+                repository=f"{unquote(parts[2])}/{unquote(parts[3])}"
+                try:
+                    client=GitHubReadClient()
+                    if len(parts)==4:
+                        self.send_json(200,client.inspect_repository(repository))
+                    else:
+                        query=parse_qs(urlparse(self.path).query)
+                        file_path=query.get("path",[""])[0]
+                        if not file_path:
+                            self.send_json(400,{"error":"missing_path"})
+                            return
+                        self.send_json(200,client.read_file(repository,file_path,query.get("ref",[None])[0]))
+                except (ValueError,GitHubApiError) as exc:
+                    self.send_json(400,{"error":"github_read_failed","message":str(exc)})
+                return
             if path.startswith("/v1/tasks/"):
                 task=store.get_task(path.rsplit("/",1)[-1])
                 self.send_json(200 if task else 404,task or {"error":"not_found"})
