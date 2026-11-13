@@ -4,6 +4,7 @@ import os
 import secrets
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,10 +38,14 @@ class AgentStore:
                 event_id TEXT PRIMARY KEY, task_id TEXT NOT NULL, event_type TEXT NOT NULL,
                 actor TEXT NOT NULL, details TEXT NOT NULL, created_at TEXT NOT NULL)""")
 
+    @contextmanager
     def connect(self):
         db=sqlite3.connect(self.database_path,timeout=10)
         db.row_factory=sqlite3.Row
-        return db
+        try:
+            yield db
+        finally:
+            db.close()
 
     def create_task(self,payload):
         agent_id=str(payload.get("agent_id","source-agent")).strip()
