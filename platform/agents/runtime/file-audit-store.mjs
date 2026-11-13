@@ -27,9 +27,9 @@ export class JsonLinesAuditStore {
   async append(event) {
     await mkdir(dirname(this.filePath), { recursive: true });
     const record = {
+      ...redact(event),
       eventId: randomUUID(),
-      recordedAt: new Date().toISOString(),
-      ...redact(event)
+      recordedAt: new Date().toISOString()
     };
     const handle = await open(this.filePath, "a", 0o600);
     try {
