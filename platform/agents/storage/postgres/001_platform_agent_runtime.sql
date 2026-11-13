@@ -254,7 +254,7 @@ returns setof public.platform_agent_jobs
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 begin
   -- A worker may crash after receiving its final attempt. Close that lease
   -- instead of leaving a permanently running job that can never be claimed.
@@ -287,7 +287,7 @@ begin
    where job.job_id = candidate.job_id
   returning job.*;
 end;
-$;
+$$;
 
 create or replace function public.complete_platform_agent_job(
   p_job_id uuid,
