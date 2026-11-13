@@ -118,7 +118,7 @@ def decide_agent_job(job_id:str,item:JobDecision):
 
 @router.get("/environment/readiness")
 def environment_readiness():
- names=("JROCAI_GATEWAY_TOKEN","JROCAI_PLATFORM_DATABASE","JROCAI_FILE_ROOT","JROCAI_ALLOW_PAID_CLOUD","JROCAI_MONTHLY_SPENDING_LIMIT_USD")
+ names=("JROCAI_GATEWAY_TOKEN","JROCAI_GITHUB_READ_TOKEN","JROCAI_PLATFORM_DATABASE","JROCAI_FILE_ROOT","JROCAI_ALLOW_PAID_CLOUD","JROCAI_MONTHLY_SPENDING_LIMIT_USD")
  try:limit=float(os.getenv("JROCAI_MONTHLY_SPENDING_LIMIT_USD","0"))
  except ValueError:limit=0
  enabled=os.getenv("JROCAI_ALLOW_PAID_CLOUD","false").lower()=="true" and limit>0
