@@ -51,3 +51,7 @@ These waves extend the shared platform services. They are not Android-only modul
 ## Explicitly not claimed
 
 The catalogue is not evidence that every domain adapter is complete. Payment capture, autonomous execution, firmware flashing, silent device control, public multi-tenant identity and paid cloud calls are not enabled by these foundations. Those require separate approved implementations and validation.
+
+## Domain record API implementation
+
+The shared domain record service provides persistent create, list, read and lifecycle-state endpoints for all twenty Wave Four and Wave Five domains in Batches 31–50. It enforces bounded record sizes, supported lifecycle states and recursive removal of credential-like fields before persistence. These APIs are protected by the platform gateway dependency. They are reusable record foundations, not a substitute for specialized business rules, tenant authorization or provider adapters.
