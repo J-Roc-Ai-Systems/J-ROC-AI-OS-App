@@ -1,0 +1,38 @@
+name: Platform Agent Runtime
+
+on:
+  pull_request:
+    paths:
+      - "platform/agents/**"
+      - "agents/source-agent/**"
+      - ".github/workflows/platform-agent-runtime.yml"
+  push:
+    branches:
+      - main
+      - feature/platform-wide-agent-system
+    paths:
+      - "platform/agents/**"
+      - "agents/source-agent/**"
+      - ".github/workflows/platform-agent-runtime.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-runtime:
+    name: Verify platform agent runtime
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate JSON manifests
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; for (const p of ['platform/agents/registry/agent-catalog.json','platform/agents/contracts/agent-runtime-contract.json','platform/agents/policies/platform-agent-security-policy.json','platform/agents/templates/agent-manifest.template.json','agents/source-agent/platform-manifest.json']) JSON.parse(fs.readFileSync(p,'utf8'));"
+      - name: Run runtime tests
+        run: npm --prefix platform/agents/runtime test
+      - name: Check runtime syntax
+        run: npm --prefix platform/agents/runtime run check
