@@ -12,7 +12,7 @@ This is a standalone Android Studio IDE plugin project. It is separate from the 
 
 Requirements:
 - JDK 21
-- Gradle 9.0 or newer
+- Gradle 9.0 or newer (the IntelliJ Platform Gradle Plugin 2.x requirement)
 - Android Studio / IntelliJ Platform compatible with build 251 or newer
 
 From this directory:
