@@ -6,14 +6,4 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        intellijPlatform {
-            defaultRepositories()
-        }
-    }
-}
-
 rootProject.name = "jrocai-android-studio-plugin"
