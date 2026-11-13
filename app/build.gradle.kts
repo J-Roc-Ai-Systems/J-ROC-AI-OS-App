@@ -1,3 +1,15 @@
+val releaseKeystorePath = System.getenv("JROCAI_ANDROID_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("JROCAI_ANDROID_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("JROCAI_ANDROID_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("JROCAI_ANDROID_KEY_PASSWORD")
+val releaseRequested = gradle.startParameter.taskNames.any {
+    it.contains("assembleRelease", ignoreCase = true) ||
+        it.contains("bundleRelease", ignoreCase = true)
+}
+if (releaseRequested && listOf(releaseKeystorePath, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword).any { it.isNullOrBlank() }) {
+    throw GradleException("Release signing secrets are missing. Configure all JROCAI_ANDROID_* values in the protected build environment.")
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
