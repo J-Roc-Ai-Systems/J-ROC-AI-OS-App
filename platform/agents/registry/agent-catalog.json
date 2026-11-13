@@ -1,0 +1,283 @@
+{
+  "schemaVersion": "1.0.0",
+  "platform": "J-ROC AI",
+  "scope": "platform-wide",
+  "principles": [
+    "one shared registry across products",
+    "least-privilege permissions",
+    "local-first execution where supported",
+    "secrets are owned by the Environment Agent",
+    "human approval for consequential or external actions",
+    "auditable execution and truthful status reporting",
+    "agents are capabilities, not unrestricted autonomous identities"
+  ],
+  "lifecycleStates": [
+    "specified",
+    "registered",
+    "available",
+    "degraded",
+    "disabled",
+    "retired"
+  ],
+  "agents": [
+    [
+      "chairman-command",
+      "Chairman Command Agent",
+      "executive command intake, priorities, approvals and cross-product task routing",
+      "coordination"
+    ],
+    [
+      "orchestrator",
+      "Platform Orchestration Agent",
+      "decompose work, select agents, manage dependencies, retries and handoffs",
+      "coordination"
+    ],
+    [
+      "agent-registry",
+      "Agent Registry Agent",
+      "register, version, discover, validate and retire platform agents",
+      "platform"
+    ],
+    [
+      "environment",
+      "Environment Agent",
+      "central secret references, environment configuration, rotation requests and redaction",
+      "security"
+    ],
+    [
+      "identity-access",
+      "Identity and Access Agent",
+      "identity lifecycle, sessions, role-based access and permission evaluation",
+      "security"
+    ],
+    [
+      "security-guardian",
+      "Security Guardian Agent",
+      "security reviews, threat modeling, policy enforcement and incident escalation",
+      "security"
+    ],
+    [
+      "privacy-compliance",
+      "Privacy and Compliance Agent",
+      "data minimization, retention, consent, export and compliance evidence",
+      "governance"
+    ],
+    [
+      "source",
+      "Source Agent",
+      "discover, inspect, classify, verify provenance and license of code and information sources",
+      "engineering"
+    ],
+    [
+      "research",
+      "Research Agent",
+      "source-grounded research, evidence comparison and citations",
+      "knowledge"
+    ],
+    [
+      "knowledge",
+      "Knowledge and Memory Agent",
+      "approved knowledge ingestion, indexing, retrieval and lifecycle controls",
+      "knowledge"
+    ],
+    [
+      "architecture",
+      "Systems Architecture Agent",
+      "cross-platform architecture, interfaces, boundaries and technical decisions",
+      "engineering"
+    ],
+    [
+      "planning",
+      "Project Planning Agent",
+      "roadmaps, milestones, dependencies, acceptance criteria and work breakdown",
+      "delivery"
+    ],
+    [
+      "product",
+      "Product Management Agent",
+      "requirements, user stories, product scope and release priorities",
+      "product"
+    ],
+    [
+      "ux-design",
+      "User Experience Design Agent",
+      "interaction design, information architecture and design systems",
+      "product"
+    ],
+    [
+      "frontend",
+      "Frontend Engineering Agent",
+      "web interface implementation and component integration",
+      "engineering"
+    ],
+    [
+      "backend",
+      "Backend Engineering Agent",
+      "services, business logic, queues and server-side implementation",
+      "engineering"
+    ],
+    [
+      "mobile-android",
+      "Android Engineering Agent",
+      "native Android implementation, lifecycle, permissions and packaging",
+      "engineering"
+    ],
+    [
+      "mobile-ios",
+      "iOS Engineering Agent",
+      "native iOS implementation and platform integration",
+      "engineering"
+    ],
+    [
+      "desktop",
+      "Desktop Engineering Agent",
+      "Windows and Linux desktop applications and installers",
+      "engineering"
+    ],
+    [
+      "api-integration",
+      "API and Integration Agent",
+      "API contracts, connectors, webhooks and external service adapters",
+      "engineering"
+    ],
+    [
+      "database",
+      "Database Engineering Agent",
+      "schemas, migrations, indexing, backup strategy and data integrity",
+      "engineering"
+    ],
+    [
+      "testing",
+      "Test Engineering Agent",
+      "unit, integration, contract and end-to-end test design and execution",
+      "quality"
+    ],
+    [
+      "quality-review",
+      "Quality Assurance Agent",
+      "acceptance validation, regression analysis and release evidence",
+      "quality"
+    ],
+    [
+      "code-review",
+      "Code Review Agent",
+      "change review, maintainability, security and standards checks",
+      "quality"
+    ],
+    [
+      "debugging",
+      "Debugging Agent",
+      "reproduce failures, inspect logs, isolate causes and propose verified fixes",
+      "quality"
+    ],
+    [
+      "documentation",
+      "Documentation Agent",
+      "developer guides, user documentation, runbooks and change records",
+      "delivery"
+    ],
+    [
+      "devops",
+      "Build and DevOps Agent",
+      "build pipelines, reproducible environments and deployment automation",
+      "operations"
+    ],
+    [
+      "release",
+      "Release Management Agent",
+      "versioning, release gates, changelogs, packaging and rollback plans",
+      "operations"
+    ],
+    [
+      "observability",
+      "Monitoring and Reliability Agent",
+      "health signals, telemetry, alerting and reliability reporting",
+      "operations"
+    ],
+    [
+      "backup-recovery",
+      "Backup and Recovery Agent",
+      "backup verification, restore procedures and disaster recovery drills",
+      "operations"
+    ],
+    [
+      "cost-governance",
+      "Cost Governance Agent",
+      "zero-dollar spending gate, quotas, free-tier limits and paid-use approvals",
+      "governance"
+    ],
+    [
+      "model-router",
+      "Model Routing Agent",
+      "model selection, local fallback, provider abstraction and usage limits",
+      "intelligence"
+    ],
+    [
+      "data-migration",
+      "Data Migration Agent",
+      "data mapping, migration plans, validation and rollback",
+      "engineering"
+    ],
+    [
+      "support",
+      "Customer Support Agent",
+      "support triage, issue classification and knowledge-backed assistance",
+      "operations"
+    ],
+    [
+      "academy",
+      "Academy and Training Agent",
+      "curriculum, lessons, labs, assessments and certification workflows",
+      "education"
+    ],
+    [
+      "business-operations",
+      "Business Operations Agent",
+      "operational workflows, service processes and reporting",
+      "business"
+    ],
+    [
+      "marketing",
+      "Marketing and Advertising Agent",
+      "campaign planning, brand-consistent copy and performance analysis",
+      "business"
+    ],
+    [
+      "commerce",
+      "Commerce Agent",
+      "catalog, storefront, orders, subscriptions and customer workflows",
+      "business"
+    ],
+    [
+      "creative-studio",
+      "Creative Studio Agent",
+      "approved creative briefs, media assets and production coordination",
+      "creative"
+    ],
+    [
+      "repair-intelligence",
+      "Universal Repair Intelligence Agent",
+      "device diagnostics, repair workflows, compatibility and evidence-backed guidance",
+      "specialized"
+    ],
+    [
+      "device-fleet",
+      "Device Fleet Management Agent",
+      "authorized device enrollment, inventory, staged updates and fleet status",
+      "specialized"
+    ]
+  ],
+  "registrationRules": {
+    "defaultState": "specified",
+    "availabilityRequires": [
+      "manifest validation",
+      "permission declaration",
+      "owner assignment",
+      "audit integration",
+      "tests for declared capabilities"
+    ],
+    "crossProductDiscovery": "Products query the shared registry by capability and platform tags; they must not maintain divergent copies of agent identity.",
+    "agentExecution": "Only registered and available agents may be dispatched.",
+    "approval": "High-impact actions require explicit human approval; approval cannot be inferred from an agent recommendation."
+  }
+}
