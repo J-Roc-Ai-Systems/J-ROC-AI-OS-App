@@ -159,7 +159,7 @@ RESOURCE_REQUIRED={
  "export_requests":("subject_id","format","scope"),"privacy_consents":("subject_id","purpose","granted")
 }
 RESOURCE_REQUIRED.update({
- "agent_profiles":("agent_id","capabilities"),"agent_delegations":("source_agent","target_agent","task_reference"),
+ "agent_profiles":("agent_id","capabilities"),"documentation_reviews":("document_reference","findings"),"agent_delegations":("source_agent","target_agent","task_reference"),
  "agent_knowledge":("topic","source_reference","content"),"agent_evaluations":("agent_id","evaluation_period","metrics"),
  "sdk_releases":("package","version","target_platforms"),"application_projects":("project_id","name","platforms"),
  "website_projects":("project_id","domain","brand_profile"),"interface_components":("component_id","version","schema"),
