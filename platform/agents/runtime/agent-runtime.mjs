@@ -42,8 +42,10 @@ export class AgentRuntime {
     policyEngine = new PolicyEngine({ approvalStore }),
     defaultTimeoutMilliseconds = 30000
   }) {
-    if (!registry || !handlers || !auditStore?.append || !idempotencyStore?.get || !idempotencyStore?.set) {
-      throw new TypeError("Registry, handlers, audit store, and idempotency store are required.");
+    const hasLegacyIdempotency = idempotencyStore?.get && idempotencyStore?.set;
+    const hasAtomicIdempotency = idempotencyStore?.begin && idempotencyStore?.complete;
+    if (!registry || !handlers || !auditStore?.append || (!hasLegacyIdempotency && !hasAtomicIdempotency)) {
+      throw new TypeError("Registry, handlers, audit store, and a supported idempotency store are required.");
     }
     this.registry = registry;
     this.handlers = handlers;
@@ -73,14 +75,55 @@ export class AgentRuntime {
       input: request.input
     });
     const idempotencyKey = `${request.tenantId}:${request.idempotencyKey}`;
-    const prior = await this.idempotencyStore.get(idempotencyKey);
-    if (prior) {
-      if (prior.fingerprint !== fingerprint) {
+    let ownsReservation = false;
+
+    if (typeof this.idempotencyStore.begin === "function") {
+      const claim = await this.idempotencyStore.begin({
+        tenantId: request.tenantId,
+        idempotencyKey: request.idempotencyKey,
+        fingerprint
+      });
+      if (claim.state === "completed") return claim.response;
+      if (claim.state === "conflict") {
         throw new AgentRuntimeError("IDEMPOTENCY_CONFLICT", "This idempotency key was already used for a different request.", 409);
       }
-      return prior.response;
+      if (claim.state === "in_progress") {
+        throw new AgentRuntimeError("REQUEST_IN_PROGRESS", "An identical request is already executing.", 409);
+      }
+      if (claim.state !== "acquired") {
+        throw new AgentRuntimeError("IDEMPOTENCY_UNAVAILABLE", "The idempotency store returned an invalid reservation state.", 503);
+      }
+      ownsReservation = true;
+    } else {
+      const prior = await this.idempotencyStore.get(idempotencyKey);
+      if (prior) {
+        if (prior.fingerprint !== fingerprint) {
+          throw new AgentRuntimeError("IDEMPOTENCY_CONFLICT", "This idempotency key was already used for a different request.", 409);
+        }
+        return prior.response;
+      }
     }
 
+    try {
+      return await this.#executeNew({ request, principal, host }, { fingerprint, idempotencyKey, ownsReservation });
+    } catch (error) {
+      if (ownsReservation && this.idempotencyStore.fail) {
+        try {
+          await this.idempotencyStore.fail({
+            tenantId: request.tenantId,
+            idempotencyKey: request.idempotencyKey,
+            fingerprint,
+            errorCode: error instanceof AgentRuntimeError ? error.code : "AGENT_EXECUTION_FAILED"
+          });
+        } catch {
+          // The database lease will expire and permit recovery after a process failure.
+        }
+      }
+      throw error;
+    }
+  }
+
+  async #executeNew({ request, principal, host }, reservation) {
     const manifest = this.registry.getAgent(request.agentId);
     if (!manifest) {
       await this.#audit({ event: "agent.dispatch.denied", requestId: request.requestId, agentId: request.agentId, reason: "AGENT_NOT_FOUND" });
@@ -141,8 +184,9 @@ export class AgentRuntime {
       startedAt
     });
 
+    const requestedTimeout = Number(manifest.execution?.timeoutSeconds ?? 60) * 1000;
     const timeoutMilliseconds = Math.min(
-      Math.max(1, Number(manifest.execution?.timeoutSeconds ?? 60) * 1000),
+      Math.max(1, requestedTimeout),
       this.defaultTimeoutMilliseconds
     );
     const controller = new AbortController();
@@ -181,7 +225,16 @@ export class AgentRuntime {
         auditEventId,
         errors: []
       });
-      await this.idempotencyStore.set(idempotencyKey, { fingerprint, response });
+      if (reservation.ownsReservation) {
+        await this.idempotencyStore.complete({
+          tenantId: request.tenantId,
+          idempotencyKey: request.idempotencyKey,
+          fingerprint: reservation.fingerprint,
+          response
+        });
+      } else {
+        await this.idempotencyStore.set(reservation.idempotencyKey, { fingerprint: reservation.fingerprint, response });
+      }
       return response;
     } catch (error) {
       const code = error instanceof AgentRuntimeError ? error.code : (controller.signal.aborted ? "TIMEOUT" : "AGENT_EXECUTION_FAILED");
@@ -196,7 +249,7 @@ export class AgentRuntime {
         errorCode: code,
         resultStatus: "failed"
       });
-      throw new AgentRuntimeError(code, error instanceof AgentRuntimeError ? error.message : "The agent execution failed.", statusCode);
+      throw new AgentRuntimeError(code, "The agent execution failed or could not be verified.", statusCode);
     } finally {
       clearTimeout(timeout);
     }
