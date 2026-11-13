@@ -190,9 +190,9 @@ export class AgentRuntime {
       this.defaultTimeoutMilliseconds
     );
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(new Error("Agent execution timed out.")), timeoutMilliseconds);
+    let timeout;
     try {
-      const output = await handler(request.input, Object.freeze({
+      const handlerContext = Object.freeze({
         signal: controller.signal,
         requestId: request.requestId,
         tenantId: request.tenantId,
@@ -200,10 +200,17 @@ export class AgentRuntime {
         host,
         agentId: manifest.agentId,
         agentVersion: manifest.version
-      }));
-      if (controller.signal.aborted) {
-        throw new AgentRuntimeError("TIMEOUT", "Agent execution exceeded its time limit.", 504);
-      }
+      });
+      const timeoutPromise = new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          controller.abort(new Error("Agent execution timed out."));
+          reject(new AgentRuntimeError("TIMEOUT", "Agent execution exceeded its time limit.", 504));
+        }, timeoutMilliseconds);
+      });
+      const output = await Promise.race([
+        Promise.resolve().then(() => handler(request.input, handlerContext)),
+        timeoutPromise
+      ]);
       const finishedAt = new Date().toISOString();
       const auditEventId = await this.#audit({
         event: "agent.execution.completed",
@@ -251,7 +258,7 @@ export class AgentRuntime {
       });
       throw new AgentRuntimeError(code, "The agent execution failed or could not be verified.", statusCode);
     } finally {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
     }
   }
 }
