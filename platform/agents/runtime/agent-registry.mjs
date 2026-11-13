@@ -12,16 +12,9 @@ function normalizeCatalogEntry(entry) {
     throw new AgentRuntimeError("INVALID_REGISTRY", "Catalog entries contain an empty or invalid field.", 500);
   }
   return Object.freeze({
-    agentId: `jrocai.${slug}`,
-    slug,
-    displayName,
-    description,
-    domain,
-    lifecycleState: "specified",
-    version: null,
-    capabilities: Object.freeze([]),
-    supportedHosts: Object.freeze([]),
-    manifestLoaded: false
+    agentId: `jrocai.${slug}`, slug, displayName, description, domain,
+    lifecycleState: "specified", version: null,
+    capabilities: Object.freeze([]), supportedHosts: Object.freeze([]), manifestLoaded: false
   });
 }
 
@@ -54,8 +47,9 @@ export class AgentRegistry {
     if (!LIFECYCLE_STATES.has(manifest.lifecycleState)) {
       throw new AgentRuntimeError("INVALID_MANIFEST", "Manifest lifecycle state is invalid.", 400);
     }
-    if (!Array.isArray(manifest.capabilities) || !Array.isArray(manifest.supportedHosts)) {
-      throw new AgentRuntimeError("INVALID_MANIFEST", "Manifest capabilities and supported hosts must be arrays.", 400);
+    if (!Array.isArray(manifest.capabilities) || !Array.isArray(manifest.supportedHosts) ||
+        manifest.supportedHosts.some((host) => typeof host !== "string" || !host.trim())) {
+      throw new AgentRuntimeError("INVALID_MANIFEST", "Manifest capabilities and supported hosts must be valid arrays.", 400);
     }
     const capabilityIds = manifest.capabilities.map((capability) =>
       typeof capability === "string" ? capability : capability?.id
@@ -72,9 +66,16 @@ export class AgentRegistry {
     if (!manifest.audit?.required || manifest.secrets?.environmentAgentManaged !== true) {
       throw new AgentRuntimeError("INVALID_MANIFEST", "Audit logging and Environment Agent secret ownership are mandatory.", 400);
     }
+    if (manifest.lifecycleState === "available" &&
+        (manifest.health?.status !== "passed" || manifest.tests?.status !== "passed")) {
+      throw new AgentRuntimeError("AGENT_NOT_AVAILABLE", "An agent cannot become available until readiness checks and capability tests pass.", 409);
+    }
+    if (manifest.execution?.timeoutSeconds !== undefined &&
+        (!Number.isInteger(manifest.execution.timeoutSeconds) || manifest.execution.timeoutSeconds < 1 || manifest.execution.timeoutSeconds > 3600)) {
+      throw new AgentRuntimeError("INVALID_MANIFEST", "Execution timeout must be between 1 and 3600 seconds.", 400);
+    }
     const registered = Object.freeze({
-      ...current,
-      ...manifest,
+      ...current, ...manifest,
       capabilities: Object.freeze([...manifest.capabilities]),
       supportedHosts: Object.freeze([...manifest.supportedHosts]),
       manifestLoaded: true
@@ -92,14 +93,10 @@ export class AgentRegistry {
       .filter((agent) => !availableOnly || agent.lifecycleState === "available")
       .filter((agent) => !host || agent.supportedHosts.includes(host))
       .map((agent) => ({
-        agentId: agent.agentId,
-        displayName: agent.displayName,
-        description: agent.description,
-        domain: agent.domain,
-        lifecycleState: agent.lifecycleState,
-        version: agent.version,
-        capabilities: agent.capabilities,
-        supportedHosts: agent.supportedHosts
+        agentId: agent.agentId, displayName: agent.displayName,
+        description: agent.description, domain: agent.domain,
+        lifecycleState: agent.lifecycleState, version: agent.version,
+        capabilities: agent.capabilities, supportedHosts: agent.supportedHosts
       }));
   }
 
