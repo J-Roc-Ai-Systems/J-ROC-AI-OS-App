@@ -13,7 +13,7 @@ test("platform runtime migration includes durable registry, audit, approval, ide
     "platform_agent_idempotency",
     "platform_agent_jobs"
   ]) {
-    assert.match(sql, new RegExp(`create table if not exists public.\\${table}\\b`));
+    assert.equal(sql.includes("create table if not exists public." + table + " ("), true);
   }
 });
 
@@ -33,7 +33,7 @@ test("approval, idempotency, and job claim functions are scoped and server-only"
     "claim_platform_agent_job",
     "complete_platform_agent_job"
   ]) {
-    assert.match(sql, new RegExp(`function public.\\${name}\\b`));
+    assert.equal(sql.includes("create or replace function public." + name + "("), true);
   }
   assert.match(sql, /for update skip locked/i);
   assert.match(sql, /tenant_id = p_tenant_id/i);
