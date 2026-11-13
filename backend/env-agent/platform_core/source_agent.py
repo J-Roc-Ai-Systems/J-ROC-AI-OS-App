@@ -2,6 +2,7 @@
 import base64
 import os
 import re
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Query
 import httpx
 from .security import require_platform_access
@@ -17,7 +18,7 @@ def validate_repository(owner:str,repo:str):
  return owner,repo
 
 def validate_source_path(path:str):
- normalized=path.replace("\\\\","/")
+ normalized=path.replace("\\","/")
  if normalized.startswith("/") or any(part in {".",".."} for part in normalized.split("/")) or len(normalized)>500:
   raise HTTPException(422,"Repository path is invalid.")
  return normalized
@@ -54,7 +55,7 @@ async def repository_tree(owner:str,repo:str,ref:str=Query(default="HEAD",min_le
  validate_repository(owner,repo)
  if not _REF.fullmatch(ref) or ".." in ref.split("/"):raise HTTPException(422,"Git reference is invalid.")
  normalized=validate_source_path(path) if path else ""
- data=await _get("/repos/"+owner+"/"+repo+"/git/trees/"+ref,{"recursive":"1"})
+ data=await _get("/repos/"+owner+"/"+repo+"/git/trees/"+quote(ref,safe="/"),{"recursive":"1"})
  entries=data.get("tree",[])
  if normalized:entries=[entry for entry in entries if entry.get("path","").startswith(normalized.rstrip("/")+"/") or entry.get("path")==normalized]
  return {"repository":owner+"/"+repo,"ref":ref,"truncated":bool(data.get("truncated")),"count":len(entries),"entries":[{"path":e.get("path"),"type":e.get("type"),"size":e.get("size"),"sha":e.get("sha")} for e in entries[:5000]]}
@@ -65,7 +66,7 @@ async def read_repository_file(owner:str,repo:str,path:str=Query(min_length=1,ma
  normalized=validate_source_path(path)
  if not normalized:raise HTTPException(422,"A file path is required.")
  if not _REF.fullmatch(ref) or ".." in ref.split("/"):raise HTTPException(422,"Git reference is invalid.")
- data=await _get("/repos/"+owner+"/"+repo+"/contents/"+normalized,{"ref":ref})
+ data=await _get("/repos/"+owner+"/"+repo+"/contents/"+quote(normalized,safe="/"),{"ref":ref})
  if data.get("type")!="file":raise HTTPException(400,"Requested repository path is not a file.")
  if int(data.get("size") or 0)>1_000_000:raise HTTPException(413,"Source file exceeds the one megabyte read limit.")
  encoded=data.get("content","")
