@@ -2,6 +2,7 @@ package online.jrocai.phone
 
 import android.provider.OpenableColumns
 import android.util.Base64
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +39,16 @@ fun FileScreen(settings:SecureSettings,client:FileClient,onBack:()->Unit,runOnMa
     var files by remember { mutableStateOf(listOf<JSONObject>()) }
     var status by remember { mutableStateOf("Sign in to upload and manage encrypted files.") }
     var busy by remember { mutableStateOf(false) }
+    var pendingDownload by remember { mutableStateOf<ByteArray?>(null) }
+    var pendingMime by remember { mutableStateOf("application/octet-stream") }
+    val savePicker=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
+        val bytes=pendingDownload
+        if(uri!=null && bytes!=null) {
+            val saved=runCatching { context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IllegalStateException("Unable to write selected destination.") }
+            status=if(saved.isSuccess) "Decrypted file saved to the selected destination." else (saved.exceptionOrNull()?.message ?: "File save failed.")
+        }
+        pendingDownload=null
+    }
     fun refresh() {
         val token=settings.readIdentityToken();val base=settings.readGatewayUrl()
         if(token.isBlank()){status="Sign in on the Account screen first.";return}
