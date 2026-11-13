@@ -1,36 +1,69 @@
-# J-ROC AI Android App
+# J-ROC AI Android Phone
 
 First-party Android application codebase for the J-ROC AI phone experience.
 
-## Project principles
-- Native Android application built with Kotlin and Jetpack Compose.
-- Local-first architecture; cloud services are optional integrations.
-- API credentials must never be committed to source control or embedded in the APK.
-- No paid third-party dependency is required to compile the starter application.
-- Keep product modules separated so the phone interface, assistant, tools, and settings can evolve independently.
+## Built application areas (0.2.0)
 
-## Requirements
-- Android Studio (current stable release)
+1. **Phone Command Center** — home dashboard and navigation to every module.
+2. **J-ROC AI Assistant** — chat UI routed through the J-ROC AI Env Agent.
+3. **J-Bot** — device troubleshooting assistant with safety-oriented repair guidance.
+4. **Model Center** — Env Agent connection settings, model catalog loading, and model selection.
+5. **Conversation Manager** — locally persisted chat history with clear-history control.
+6. **Device Tools** — read-only Android hardware, build, and OS diagnostics.
+7. **J-ROC AI Settings** — local privacy, gateway-token removal, and history controls.
+
+## Security architecture: Env Agent
+
+**Provider secrets do not belong in the Android application or APK.**
+
+- `OPENAI_API_KEY` is configured only in the backend host's encrypted environment/secrets manager.
+- `JROCAI_GATEWAY_TOKEN` is a separate gateway credential, not the OpenAI API key.
+- The phone stores only its gateway access token encrypted with Android Keystore.
+- The phone sends requests to the J-ROC AI Env Agent over HTTPS. The Env Agent calls the OpenAI API server-to-server.
+- Real `.env` files, signing keys, keystores, and local configuration are excluded by `.gitignore`.
+- Do not paste credentials into GitHub, source code, build logs, screenshots, or chat messages.
+
+The current shared gateway-token mechanism is a private development gate. Before public release, replace it with per-user authentication (for example, Supabase Auth JWT validation), authorization, rate limits, quotas, and audit logging. Never ship a shared gateway token inside the APK.
+
+## Env Agent setup
+
+See [backend/env-agent/README.md](backend/env-agent/README.md).
+
+The backend expects these environment variables, set in the hosting platform's secret manager:
+
+- `OPENAI_API_KEY` — provider credential.
+- `JROCAI_GATEWAY_TOKEN` — separate private gateway access token.
+
+A template with placeholder values is provided at `backend/env-agent/.env.example`. It is safe to commit because it contains no real secrets.
+
+## Android requirements
+
+- Android Studio
 - JDK 17
 - Android SDK Platform 35
 - Android Gradle Plugin 8.7.3
 - Kotlin 2.0.21
 
-## Build
-Open this repository in Android Studio, allow Gradle sync, then run the `app` configuration on an Android device or emulator.
+## Build the Android app
 
-Command line (Windows):
+Open the repository in Android Studio, sync Gradle, then run the `app` configuration on an Android device or emulator.
+
+Windows command line (if the Gradle wrapper is present):
+
 ```powershell
 .\gradlew.bat :app:assembleDebug
 ```
 
-## Initial application structure
-- `app/src/main/java/online/jrocai/phone/MainActivity.kt` — Compose application shell and home dashboard.
-- `app/src/main/AndroidManifest.xml` — Android application declaration.
-- Future modules: assistant runtime, model routing, device tools, conversations, settings, and account sync.
+The app requires an HTTPS Env Agent endpoint for live AI calls. Device diagnostics and locally saved conversations can be used without the AI gateway.
 
-## Secrets and API configuration
-Do not place OpenAI or other provider keys in Kotlin files, Gradle files, assets, or GitHub. For production, route provider requests through an authenticated backend. For local development, use an untracked local configuration file or Android Studio run configuration and keep it out of commits.
+## Current implementation boundaries
 
-## Status
-Foundation commit: native Android shell and build configuration. This is a starting codebase, not a claim that all phone OS features or AI integrations are already implemented.
+- ChatGPT-powered assistant and J-Bot calls are wired to the Env Agent API contract; a deployed and configured Env Agent is required for live replies.
+- Model Center fetches the model catalog from the Env Agent.
+- Conversation history is local to this Android installation; account login and cross-device sync are not implemented.
+- Device Tools are read-only device/build diagnostics, not low-level repair or unlock tools.
+- The Android Studio IDE plugin is maintained as a separate project/branch.
+
+## Version
+
+Android app: 0.2.0
