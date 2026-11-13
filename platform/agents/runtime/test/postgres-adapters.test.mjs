@@ -90,7 +90,7 @@ test("PostgreSQL agent definition store persists manifests and selects the lates
     health: { status: "pending" }, tests: { status: "pending" }
   };
   assert.equal((await store.register(manifest)).lifecycle_state, "registered");
-  assert.equal((await store.listRegistered())[0].agentId, "jrocai.demo");
+  assert.equal((await store.listLatest())[0].agentId, "jrocai.demo");
   await assert.rejects(
     store.register({ ...manifest, lifecycleState: "available" }),
     /readiness pass/
