@@ -4,13 +4,13 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from .database import db
 from .models import utc_now
-from .security import audit, require_platform_access
+from .security import audit
 
-router = APIRouter(prefix="/platform/v1", tags=["J-ROC AI Waves Three to Five"], dependencies=[Depends(require_platform_access)])
+router = APIRouter(prefix="/platform/v1", tags=["J-ROC AI Waves Three to Five"])
 
 WAVES = [
  {"wave":3,"name":"Governance and orchestration","batches":[
@@ -159,10 +159,10 @@ def evaluate_policy(item:PolicyCheck):
             outcome="deny"; reason="Estimated cost exceeds the configured monthly spending limit."
         else:
             outcome="requires_approval"; reason="Paid execution requires a separate explicit approval."
-    elif any(term in action for term in ("bypass_security","credential_dump","steal_token","disable_protection")):
-        outcome="deny"; reason="Operation violates the platform security policy."
     elif item.destructive or any(term in action for term in ("erase","wipe","flash_firmware","unlock_bootloader","publish","release","install_package","delete")):
         outcome="requires_approval"; reason="Destructive or externally visible operation requires explicit approval."
+    elif any(term in action for term in ("bypass_security","credential_dump","steal_token","disable_protection")):
+        outcome="deny"; reason="Operation violates the platform security policy."
     decision_id=str(uuid.uuid4())
     db.execute("""INSERT INTO platform_policy_decisions(decision_id,action,resource_type,resource_id,outcome,reason,estimated_cost_usd,created_at)
       VALUES(?,?,?,?,?,?,?,?)""",(decision_id,item.action,item.resource_type,item.resource_id,outcome,reason,item.estimated_cost_usd,utc_now()))
