@@ -18,6 +18,8 @@ from platform_core.domain_records import router as domain_records_router
 app.include_router(domain_records_router)
 from platform_core.wave610 import router as waves_six_to_ten_router
 app.include_router(waves_six_to_ten_router)
+from platform_core.source_agent import router as source_agent_router
+app.include_router(source_agent_router)
 
 @app.on_event("startup")
 def register_wave_two_services():
