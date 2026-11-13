@@ -1,7 +1,7 @@
-"""Authenticated API for Wave Two services. This first release is single-gateway; per-user identity is not implied."""
+"""Authenticated administrator and separately authenticated worker APIs."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from .security import require_platform_access
+from .security import require_platform_access, require_worker_identity
 from .models import WorkerRegistration, JobSubmission, IntegrationRegistration, ProjectCreate, DeviceRegistration, ApplicationRegistration
 from .workers import workers
 from .integrations import integrations
@@ -16,8 +16,8 @@ from .events import events
 from .storage import storage
 
 router=APIRouter(prefix="/platform/v1",tags=["J-ROC AI Platform"],dependencies=[Depends(require_platform_access)])
+worker_router=APIRouter(prefix="/platform/v1",tags=["J-ROC AI Workers"])
 class JobFinish(BaseModel):
-    worker_id: str = Field(min_length=2,max_length=80)
     result: dict = Field(default_factory=dict)
     error: str | None = Field(default=None,max_length=1000)
 class KnowledgeInput(BaseModel):
@@ -41,7 +41,7 @@ class NotificationInput(BaseModel):
 
 @router.get("/status")
 def status():
-    return {"service":"jrocai-platform-core","database":"connected","mode":"single-gateway","spending_policy":"cloud_spending_disabled_by_default","modules":["application_factory","brain_foundation","integration_registry","production_workers","device_inventory","platform_registry","communications","knowledge","file_storage_metadata","application_inventory"]}
+    return {"service":"jrocai-platform-core","database":"connected","mode":"gateway-admin-plus-worker-identities","spending_policy":"cloud_spending_disabled_by_default","modules":["application_factory","brain_foundation","integration_registry","production_workers","device_inventory","platform_registry","communications","knowledge","file_storage_metadata","application_inventory"]}
 
 @router.post("/workers")
 def register_worker(item:WorkerRegistration): return workers.register(item)
@@ -53,17 +53,25 @@ def set_worker_state(worker_id:str,state:str):
     except ValueError as exc: raise HTTPException(400,str(exc))
     if not result: raise HTTPException(404,"Worker not found")
     return result
+@router.delete("/workers/{worker_id}/credential")
+def revoke_worker_credential(worker_id:str):
+    if not workers.get(worker_id): raise HTTPException(404,"Worker not found")
+    workers.revoke(worker_id)
+    return {"worker_id":worker_id,"credential_state":"revoked"}
+
 @router.post("/jobs")
 def submit_job(item:JobSubmission): return workers.submit(item)
 @router.get("/jobs")
 def list_jobs(limit:int=Query(default=100,ge=1,le=200)): return workers.list_jobs(limit)
-@router.post("/workers/{worker_id}/claim")
-def claim_job(worker_id:str):
-    if not workers.get(worker_id): raise HTTPException(404,"Worker not found")
-    return {"job":workers.claim(worker_id)}
-@router.post("/jobs/{job_id}/finish")
-def finish_job(job_id:str,payload:JobFinish):
-    result=workers.finish(job_id,payload.worker_id,payload.result,payload.error)
+
+@worker_router.post("/workers/{worker_id}/claim")
+def claim_job(worker_id:str, authenticated_worker:str=Depends(require_worker_identity)):
+    if authenticated_worker != worker_id: raise HTTPException(403,"Worker identity mismatch")
+    return {"job":workers.claim(authenticated_worker)}
+@worker_router.post("/jobs/{job_id}/finish")
+def finish_job(job_id:str,payload:JobFinish,worker_id:str=Query(min_length=2,max_length=80),authenticated_worker:str=Depends(require_worker_identity)):
+    if authenticated_worker != worker_id: raise HTTPException(403,"Worker identity mismatch")
+    result=workers.finish(job_id,authenticated_worker,payload.result,payload.error)
     if not result: raise HTTPException(409,"Job is not running for this worker")
     return result
 
@@ -79,7 +87,6 @@ def integration_state(integration_id:str,state:str):
     except ValueError as exc: raise HTTPException(400,str(exc))
     if not result: raise HTTPException(404,"Integration not found")
     return result
-
 @router.post("/projects")
 def create_project(item:ProjectCreate): return factory.create(item)
 @router.get("/projects")
@@ -91,7 +98,6 @@ def prepare_workspace(project_id:str):
     except ValueError as exc: raise HTTPException(400,str(exc))
     if not result: raise HTTPException(404,"Project not found")
     return result
-
 @router.post("/devices")
 def register_device(item:DeviceRegistration): return devices.register(item)
 @router.get("/devices")
@@ -102,7 +108,6 @@ def device_state(device_id:str,state:str):
     except ValueError as exc: raise HTTPException(400,str(exc))
     if not result: raise HTTPException(404,"Device not found")
     return result
-
 @router.post("/knowledge")
 def add_knowledge(item:KnowledgeInput): return knowledge.add(item.title,item.source_reference,item.content)
 @router.get("/knowledge/search")
@@ -118,7 +123,6 @@ def mark_notification_read(notification_id:int):
     result=communications.mark_read(notification_id)
     if not result: raise HTTPException(404,"Notification not found")
     return result
-
 @router.post("/applications")
 def register_application(item:ApplicationRegistration): return applications.register(item)
 @router.get("/applications")
@@ -126,13 +130,10 @@ def list_applications(): return applications.list()
 @router.get("/audit")
 def list_audit(limit:int=Query(default=100,ge=1,le=500)):
     return db.many("SELECT event_id,actor,action,resource_type,resource_id,details,created_at FROM audit_events ORDER BY event_id DESC LIMIT ?",(limit,))
-
-
 @router.get("/brain/status")
 def brain_status(): return brain.status()
 @router.post("/brain/plan")
 def create_brain_plan(item:BrainPlanRequest): return brain.plan(item)
-
 @router.post("/services")
 def register_service(item:ServiceRegistration): return events.register_service(item.service_id,item.display_name,item.version,item.capabilities)
 @router.get("/services")
@@ -141,7 +142,6 @@ def list_services(): return events.services()
 def publish_event(item:EventInput): return events.publish(item.event_type,item.source,item.payload)
 @router.get("/events")
 def list_events(limit:int=Query(default=100,ge=1,le=500)): return events.list(limit)
-
 @router.get("/files")
 def list_files(directory:str="",limit:int=Query(default=200,ge=1,le=500)):
     try: return storage.list(directory,limit)
