@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "J-ROC AI Wave 11–15 Record Create Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "data"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 180
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "awaiting_approval",
+        "approved",
+        "active",
+        "paused",
+        "completed",
+        "rejected",
+        "cancelled",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "source_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "data": {
+      "type": "object",
+      "description": "Collection-specific typed fields are defined by the Wave 11–15 collection catalogue endpoint."
+    }
+  }
+}
