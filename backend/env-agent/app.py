@@ -20,6 +20,8 @@ from platform_core.wave610 import router as waves_six_to_ten_router
 app.include_router(waves_six_to_ten_router)
 from platform_core.source_agent import router as source_agent_router
 app.include_router(source_agent_router)
+from platform_core.wave1115 import router as waves_eleven_to_fifteen_router
+app.include_router(waves_eleven_to_fifteen_router)
 
 @app.on_event("startup")
 def register_wave_two_services():
@@ -36,7 +38,12 @@ def register_wave_two_services():
         ("communication-center", "Communication Center", ["notifications", "read-state"]),
         ("knowledge-center", "Knowledge Center", ["document-index", "source-search"]),
         ("file-storage", "File Management", ["safe-file-inventory", "metadata-hashing"]),
-        ("application-inventory", "Application Management", ["application-registry"])
+        ("application-inventory", "Application Management", ["application-registry"]),
+        ("knowledge-intelligence", "Knowledge and Intelligence Services", ["knowledge-records", "document-indexing", "retrieval-governance"]),
+        ("productivity-center", "Productivity and Communications", ["calendar-records", "task-planning", "message-governance"]),
+        ("business-operations", "Business Operations Services", ["finance-records", "inventory-records", "financial-validation"]),
+        ("creator-studio", "Creator Studio Services", ["media-projects", "rights-metadata", "publishing-workflows"]),
+        ("platform-reliability", "Platform Reliability and Governance", ["service-observability", "incident-records", "recovery-drills", "risk-register"])
     ]
     for service_id, display_name, capabilities in services:
         events.register_service(service_id, display_name, "0.3.0", capabilities)
