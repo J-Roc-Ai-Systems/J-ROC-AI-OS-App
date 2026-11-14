@@ -19,5 +19,9 @@ class WaveApiMountTests(unittest.TestCase):
         self.assertIn("/platform/v1/source-agent/status",paths)
         self.assertIn("/platform/v1/source-agent/repositories/{owner}/{repo}/tree",paths)
         self.assertIn("/platform/v1/source-agent/repositories/{owner}/{repo}/files",paths)
+        self.assertIn("/platform/v1/waves/11-15",paths)
+        self.assertIn("/platform/v1/wave-eleven-fifteen/catalog",paths)
+        self.assertIn("/platform/v1/wave-eleven-fifteen/records/{collection}",paths)
+        self.assertIn("/platform/v1/wave-eleven-fifteen/records/{collection}/{record_id}/state",paths)
 
 if __name__=="__main__": unittest.main()
