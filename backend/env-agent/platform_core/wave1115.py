@@ -1,5 +1,6 @@
 """Wave Eleven through Fifteen: typed local-first platform service foundations."""
 import json
+import math
 import re
 import uuid
 from typing import Any
@@ -35,6 +36,7 @@ REQUIRED = {
 }
 STATES={"draft","pending","awaiting_approval","approved","active","paused","completed","rejected","cancelled","archived"}
 TERMINAL={"completed","rejected","cancelled","archived"}
+APPROVAL_COLLECTIONS={"message_jobs","automation_recipes","publishing_items","broadcast_sessions","configuration_changes","recovery_drills"}
 SECRET_PARTS=("password","secret","token","credential","private_key","api_key","authorization","access_key")
 BLOCKED_TERMS=("payment_capture","charge_card","execute_shell","arbitrary_code","secret_export","firmware_write","security_bypass")
 
@@ -70,7 +72,7 @@ def _validate(collection:str,data:dict):
   raise HTTPException(403,"Requested operation is outside the approved platform boundary.")
  if collection in {"budgets","expense_records","invoices","financial_reports"}:
   amount=data.get("amount",0)
-  if amount is not None and (not isinstance(amount,(int,float)) or isinstance(amount,bool) or amount<0):raise HTTPException(422,"Financial amounts must be non-negative numbers.")
+  if amount is not None and (not isinstance(amount,(int,float)) or isinstance(amount,bool) or not math.isfinite(amount) or amount<0):raise HTTPException(422,"Financial amounts must be finite, non-negative numbers.")
  if collection=="budgets" and not re.fullmatch(r"[A-Z]{3}",str(data.get("currency",""))):raise HTTPException(422,"Currency must be a three-letter uppercase code.")
  if collection=="notification_preferences" and not isinstance(data.get("enabled"),bool):raise HTTPException(422,"Notification enabled must be a boolean.")
  if collection=="accessibility_settings" and not isinstance(data.get("preferences"),dict):raise HTTPException(422,"Accessibility preferences must be an object.")
@@ -103,9 +105,10 @@ def create_record(collection:str,item:RecordCreate):
  if collection not in COLLECTIONS:raise HTTPException(404,"Collection is not registered.")
  _ensure()
  safe=_clean(item.data);_validate(collection,safe)
+ if collection in APPROVAL_COLLECTIONS and item.state=="active":raise HTTPException(409,"This record requires an approval transition before activation.")
  if len(json.dumps(safe,ensure_ascii=False))>100000:raise HTTPException(413,"Record data exceeds the 100 kilobyte limit.")
  rid=str(uuid.uuid4());now=utc_now()
- db.execute("INSERT INTO wave1115_records VALUES(?,?,?,?,?,?,?,?,?)",(rid,collection,COLLECTIONS[collection],item.title,item.state,item.source_reference,db.encode(safe),now,now))
+ db.execute("INSERT INTO wave1115_records VALUES(?,?,?,?,?,?,?,?,?)",(rid,collection,COLLECTIONS[collection],item.title,item.state,_clean(item.source_reference),db.encode(safe),now,now))
  audit("wave1115_record.create",collection,rid,item.title)
  return _record(db.one("SELECT * FROM wave1115_records WHERE record_id=?",(rid,)))
 
@@ -130,6 +133,7 @@ def transition_record(collection:str,record_id:str,item:RecordTransition):
  _ensure();row=db.one("SELECT state FROM wave1115_records WHERE collection=? AND record_id=?",(collection,record_id))
  if not row:raise HTTPException(404,"Record not found.")
  if row["state"] in TERMINAL:raise HTTPException(409,"Terminal records cannot be reopened.")
+ if collection in APPROVAL_COLLECTIONS and item.state=="active" and row["state"]!="approved":raise HTTPException(409,"Approval is required before activation.")
  if row["state"]=="awaiting_approval" and item.state=="active":raise HTTPException(409,"Approval is required before activation.")
  if row["state"]=="awaiting_approval" and item.state not in {"approved","rejected","cancelled"}:raise HTTPException(409,"An approval-pending record can only be approved, rejected, or cancelled.")
  db.execute("UPDATE wave1115_records SET state=?,updated_at=? WHERE collection=? AND record_id=?",(item.state,utc_now(),collection,record_id))
