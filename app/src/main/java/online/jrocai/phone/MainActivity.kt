@@ -56,7 +56,7 @@ private val Muted = Color(0xFFAAB6C5)
 
 private val destinations = listOf(
     "Command Center", "AI Assistant", "J-Bot", "Model Center",
-    "Conversations", "Device Tools", "Settings", "Wave 2", "Waves 3–5", "Waves 6–10"
+    "Conversations", "Device Tools", "Settings", "Wave 2", "Waves 3–5", "Waves 6–10", "Waves 11–15"
 )
 
 class MainActivity : ComponentActivity() {
@@ -143,6 +143,7 @@ private fun JrocPhoneApp(
                 "Wave 2" -> WaveTwoHub(onBack = { selected = "Command Center" })
                 "Waves 3–5" -> WaveThreeToFiveHub(onBack = { selected = "Command Center" })
                 "Waves 6–10" -> WaveSixToTenHub(onBack = { selected = "Command Center" })
+                "Waves 11–15" -> WaveElevenFifteenHub(onBack = { selected = "Command Center" })
                 "Settings" -> SettingsScreen(secureSettings, onClearHistory = {
                     conversationStore.clear()
                     messages.clear()
@@ -179,6 +180,7 @@ private fun CommandCenter(onOpen: (String) -> Unit, gatewayConfigured: Boolean, 
         ModuleCard("Wave 2 Production Platform", "Open the ten intelligence and production infrastructure areas.", "Open Wave 2") { onOpen("Wave 2") }
         ModuleCard("Waves 3–5 Platform", "Agent governance, universal repair operations and enterprise services.", "Open Waves 3–5") { onOpen("Waves 3–5") }
         ModuleCard("Waves 6–10 Platform", "Source intelligence, developer factory, operating system, cybersecurity and marketplace foundations.", "Open Waves 6–10") { onOpen("Waves 6–10") }
+        ModuleCard("Waves 11–15 Platform", "Knowledge, productivity, finance operations, creator studio and platform reliability.", "Open Waves 11–15") { onOpen("Waves 11–15") }
         Text("J-ROC AI • Local-first phone workspace", color = Muted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
