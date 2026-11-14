@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - waves-6-to-10-platform-expansion
+      - waves-11-to-15-platform-expansion
   pull_request:
     branches:
       - main
