@@ -69,6 +69,26 @@ class WaveElevenFifteenTests(unittest.TestCase):
         approved = wave.transition_record("configuration_changes", record["record_id"], RecordTransition(state="approved", reason="Reviewed and approved"))
         self.assertEqual("approved", approved["state"])
 
+    def test_sensitive_automation_cannot_start_active(self):
+        with self.assertRaises(Exception):
+            wave.create_record("automation_recipes", RecordCreate(
+                title="Unapproved automation", state="active",
+                data={"trigger": "manual", "steps": [{"type": "notify", "target": "owner"}]}))
+
+    def test_configuration_change_requires_approval_before_activation(self):
+        record = wave.create_record("configuration_changes", RecordCreate(
+            title="Configuration change",
+            data={"system_reference": "gateway", "change_summary": "Change setting", "requested_by": "operator"}))
+        with self.assertRaises(Exception):
+            wave.transition_record("configuration_changes", record["record_id"],
+                RecordTransition(state="active", reason="Activation without approval"))
+
+    def test_non_finite_financial_amount_is_rejected(self):
+        with self.assertRaises(Exception):
+            wave.create_record("expense_records", RecordCreate(
+                title="Invalid infinite expense",
+                data={"amount": float("nan"), "currency": "USD", "category": "travel", "occurred_at": "2026-11-13"}))
+
     def test_terminal_records_cannot_be_reopened(self):
         record = wave.create_record("notes", RecordCreate(title="Closed note", data={"title": "Close", "content": "Record"}))
         wave.transition_record("notes", record["record_id"], RecordTransition(state="completed", reason="Work completed"))
