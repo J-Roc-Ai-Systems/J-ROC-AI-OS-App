@@ -26,6 +26,9 @@ All routes require the existing platform gateway bearer token.
 - GET /platform/v1/wave-eleven-fifteen/records/{collection}/{record_id} — retrieve a record.
 - PATCH /platform/v1/wave-eleven-fifteen/records/{collection}/{record_id}/state — governed state transition.
 
+## Android integration
+The Android application now includes a Waves 11–15 hub in its main navigation and Command Center. It reads the five-wave catalogue and fifty-collection catalogue through a dedicated authenticated client, using the gateway URL and encrypted token already stored in secure settings. The screen reports live connection and catalogue counts; it does not claim that every collection has a finished editing interface.
+
 ## Safety and implementation boundaries
 - Sensitive field names are removed recursively before records are stored.
 - The API does not expose payment capture, shell execution, arbitrary code execution, secret export, firmware writes, or security bypass.
